@@ -3,9 +3,9 @@ import random
 class Sheet_Template:
     def __init__(self, nome, AttB, AttC, AttV):
         self.nome = nome
-        self.B = AttB
-        self.C = AttC
-        self.V = AttV
+        self.AttB = AttB
+        self.AttC = AttC
+        self.AttV = AttV
         self.Alive = 1
         self.WeaponsBackpack = []
         self.UsablesBackpack = []
@@ -28,9 +28,9 @@ class Sheet_Template:
 
     def Display(self):
         print("Nome: ", self.nome)
-        print("B: ", self.B)
-        print("C: ", self.C)
-        print("V: ", self.V)
+        print("B: ", self.AttB)
+        print("C: ", self.AttC)
+        print("V: ", self.AttV)
         print("Alive: ", self.Alive)
         print("\n-=-=-=-=-=-=-Backpack-=-=-=-=-=-=-")
         # Print Weapons
@@ -54,52 +54,54 @@ class Sheet_Template:
         self.B = AttB
 
     def AttB_getValue(self):
-        return self.B
+        return self.AttB
     
 
     # Additional methods
     def AttB_ModifyAtr(self, x): # Damage, Heal, etc
-        self.B = self.B + x
-        if self.B < 0:
-            self.B = 0
+        self.AttB = self.AttB + x
+        print(self.name + "recebeu" + x +"para AttB")
+        if self.AttB < 0:
+            self.AttB = 0
             self.Alive = 0
+            print(self.name + "está morto")
 
     def AttB_isZero(self): 
-        return self.B == 0
+        return self.AttB == 0
 
-    def AttB_isLessThan(self, x):
-        return self.B < x
+    def AttAttB_isLessThan(self, x):
+        return self.AttB < x
 
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     
     #getters and setters
     def AttC_setValue(self, AttC):
-        self.C = AttC
+        self.AttC = AttC
 
     def AttC_getValue(self):
-        return self.C
+        return self.AttC
 
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     
     #getters and setters
     def AttV_setValue(self, AttV):
-        self.V = AttV
+        self.AttV = AttV
 
     def AttV_getValue(self):
-        return self.V
+        return self.AttV
 
 
     # Additional methods
     def AttV_rollAtr(self, dice, target, count): # roll dices
-        return self.roll_DiceWithCount(dice, count) + self.V >= target
+        return self.roll_DiceWithCount(dice, count) + self.AttV >= target
 
     def AttV_rollAtrWithCountMod(self, dice, target, count, mod):
-        return self.roll_DiceWithCountMod(dice, count, mod) + self.V >= target
+        return self.roll_DiceWithCountMod(dice, count, mod) + self.AttV >= target
         
     def AttV_UpgradeAtr(self, x): # Upgrade the attribute
-        self.V = self.V + x
+        self.AttV = self.AttV + x
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     
@@ -114,6 +116,7 @@ class Sheet_Template:
     def addWeapon(self, weapon, quantity):
         if quantity > 0:
             self.WeaponsBackpack.append([weapon, quantity])
+            print("Você pegou ", weapon.getName())
 
         if quantity < 0:
             for i in range(len(self.WeaponsBackpack)):
@@ -123,6 +126,14 @@ class Sheet_Template:
                         self.WeaponsBackpack.pop(i)
                         break
     
+    def removeWeapon(self, weapon, quantity):
+        for i in range(len(self.WeaponsBackpack)):
+            if self.WeaponsBackpack[i][0] == weapon:
+                self.WeaponsBackpack[i][1] = self.WeaponsBackpack[i][1] - quantity
+                if self.WeaponsBackpack[i][1] <= 0:
+                    self.WeaponsBackpack.pop(i)
+                    print("Você perdeu", weapon.getName())
+
     def getWeapons(self):
         WeaponListNames = []
         for i in range(len(self.WeaponsBackpack)):
@@ -134,10 +145,12 @@ class Sheet_Template:
     def getWeaponsBackpack(self):
         return self.WeaponsBackpack
 
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     
     def addUsable(self, usable, quantity):
         if quantity > 0:
             self.UsablesBackpack.append([usable, quantity])
+            print("Você ganhou", usable.getName())
 
         if quantity < 0:
             for i in range(len(self.UsablesBackpack)):
@@ -147,6 +160,14 @@ class Sheet_Template:
                         self.UsablesBackpack.pop(i)
                         break
     
+    def removeUsable(self, usable, quantity):
+        for i in range(len(self.UsablesBackpack)):
+            if self.UsablesBackpack[i][0] == usable:
+                self.UsablesBackpack[i][1] = self.UsablesBackpack[i][1] - quantity
+                if self.UsablesBackpack[i][1] <= 0:
+                    self.UsablesBackpack.pop(i)
+                    print("Você perdeu",usable.getName())
+
     def getUsables(self):
         UsableListNames = []
         for i in range(len(self.UsablesBackpack)):
@@ -158,7 +179,8 @@ class Sheet_Template:
     def getUsablesBackpack(self):
         return self.UsablesBackpack
 
-    
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
     def addPermanent(self, permanent, quantity):
         if quantity > 0:
             self.PermanentsBackpack.append([permanent, quantity])
@@ -170,6 +192,12 @@ class Sheet_Template:
                     if self.PermanentsBackpack[i][1] <= 0:
                         self.PermanentsBackpack.pop(i)
                         break
+
+    def removePermanent(self, permanent):
+        for i in range(len(self.PermanentsBackpack)):
+            if self.PermanentsBackpack[i][0] == permanent:
+                    self.PermanentsBackpack.pop(i)
+                    print("Você perdeu",permanent.getName() )
               
     def getPermanents(self):
         PermanentListNames = []
@@ -182,7 +210,39 @@ class Sheet_Template:
     def getPermanentsBackpack(self):
         return self.PermanentsBackpack
              
-
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
           
-                    
+    def dance(self, target):
+        print(self.nome, "dançou com", target.nome)
+        if self.AttV_rollAtr(20, 50, 1):
+            print("Dançou muito bem. Daaaaaale!")
+        else:
+            print("Dançou mal. Não foi poggers amigo")
+
+    def punch(self, target, damage):
+        print(self.nome, "bateu em", target.nome)
+        if target is not None:
+            if self.AttV_rollAtr(20, 50, 1):
+                print("Acertou em cheio!")
+                self.attV -= damage
+            else:
+                print("Bateu mal. Errou o alvo")
             
+    
+    def wink(self, target):
+        print(self.nome, "piscou para", target.nome)
+
+    def send(self, target, item, quantity):
+        print(self.nome, "entregou", item.getName(), "para", target.nome)
+        print(target.nome, "recebeu", item.getName())
+        if hasattr(item, 'range'):
+            target.addWeapon(item, quantity)
+            self.removeWeapon(item, quantity)
+        elif hasattr(item, 'durability'):
+            target.addUsable(item, quantity)
+            self.removeUsable(item, quantity)
+        else:
+            target.addPermanent(item, quantity)
+            self.removePermanent(item)
+
+

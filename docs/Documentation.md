@@ -16,15 +16,16 @@ Ficha:
 
     Equipamentos:
         estão organizados em diferentes listas
+        Para equipamentos como Utilizáveis é necessário que se adicione na mao os valores nos atributos que são afetados por buff, ou será necessário adicionar um método para cada atributo (como acontece em equipamentos permanentes)
 
         Armas: possuem caractéristicas como dano, nome e dados atrelados a ele etc
-           Métodos: Get/Set, Rolldice, calculatedamage, Advantage, Disadvantage, Lose()
+           Métodos: Get/Set, Rolldice, calculatedamage, Advantage, Disadvantage, 
         
         Utilizáveis: possuem características como custo, nome, usos etc
-            Métodos: Use(), Capacity(), RollUse(), Lose()
+            Métodos: Use(), Capacity(),
 
         Permanentes: Que não tem limite de uso, como objetos, cordas
-            Métodos: Lose(), Add(), Get()
+            Métodos: , Add(), Get()
 
     Métodos:
         Roll_dados: rola dados para ações ou mudanças na ficha genéricos
@@ -33,4 +34,7 @@ Implementações na main:
         Trocas de mensagens: trocas de mensagens entre o cliente e o servidor
 
         Implementação de comandos de ataque, buffs, etc
+
+Metódos para criar pós conexão:
+RollUse()
 
