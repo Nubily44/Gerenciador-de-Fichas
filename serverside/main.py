@@ -3,6 +3,7 @@ import sys
 import os
 import socket
 import threading
+import pandas as pd
 
 # Add the src folder to the system path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -102,16 +103,40 @@ table.addSheet(character_sheet2)
 table.displayTable()
 
 
-#   Primeiro Número: Remetente || 0 = Cliente || 1 = Servidor
-#   Segundo Número: Id do Usuário
-#   Terceiro Número: Id da Mesa
-#   Quarto Número: Id da Ficha
-#   Quinto Número: Tipo de Mensagem:
-#   Sexto Número: Valor 1
-#   Sétimo Número: Valor 2
-#   Oitavo Número: Valor 3
-#   Nono Número: Valor 4
-#   Décimo Número: Valor 5
+#   [0]  Primeiro Número: Remetente  
+#   0 = Cliente 
+#   1 = Servidor
+
+#   [1]  Segundo Número: Id do Usuário
+#   5 digitos (aleatórios)
+
+#   [2]  Terceiro Número: Id da Mesa
+#   Adicionado dinamicamente
+
+#   [3]  Quarto Número: Id da Ficha
+#   Adicionado dinamicamente - 
+
+#   [4]  Quinto Número: Tipo de Mensagem:
+#   0 = Criar Mesa
+#   1 = Criar Ficha
+#   2 = Mudar Atributo
+#   3 = Criar Equipamento
+
+#   [5]  Sexto Número: Valor 1
+#   Caso [4] = 3:
+#   0 = Arma
+#   1 = Usável
+#   2 = Permanente
+#   3 = Buff Permanente
+
+#   [6]  Sétimo Número: Valor 2
+
+#   [7]  Oitavo Número: Valor 3
+
+#   [8]  Nono Número: Valor 4
+
+#   [9]  Décimo Número: Valor 5
+
 
 
 
@@ -136,6 +161,20 @@ if __name__ == "__main__":
 
             sender = message[0]
             idn = message[1]
+            table_id = message[2]
+            sheet_id = message[3]
+
+            tables = pd.read_csv("tables.csv")
+            tables.head()
+
+            
+            value = []
+            for i in range(4):
+                value[i] = message[i+5]
+            
+            table 
+            temp_sheet = table.getSheet(sheet_id)
+
 
 
 

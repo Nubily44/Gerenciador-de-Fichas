@@ -11,6 +11,12 @@ class Sheet_Template:
         self.UsablesBackpack = []
         self.PermanentsBackpack = []
 
+    def getHash(self):
+        return self.hash
+    
+    def setHash(self, hash):
+        self.hash = hash
+
     # Dices
     def roll_Dice(self, x):
         return random.randint(1, x)
