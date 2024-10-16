@@ -62,78 +62,140 @@ class Weapon_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state, range):
         super().__init__(name, type, rarity, state)
         self.range = range
-        print("adicionou arma:", name, "\n tipo:", type, "\n raridade:", rarity, "\n estado:", state)
+        print("Criou arma:", name, "\n tipo:", type, "\n raridade:", rarity, "\n estado:", state)
     
     def getRange(self):
         return self.range
     
     def setRange(self, range):
         self.range = range
-
-    def roll_Damage_TwoDicesMod(self, n, x, m, y, modifier):
+            
+    def roll_Damage_TwoDicesMod(self, n, x, m, y, modifier, target:None):
         temp = (n * self.roll_Dice(x) + m * self.roll_Dice(y) + modifier)
         print("Usando arma:", self.name, "\nDano: causado", temp)
+        temp = temp*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(temp)
         return temp
     
-    def roll_Damage_TwoDices(self, n, x, m, y, ):
+    def roll_Damage_TwoDices(self, n, x, m, y, target):
         temp = (n * self.roll_Dice(x) + m * self.roll_Dice(y))
         print("Usando arma:", self.name, "\nDano: causado", temp)
+        temp = temp*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(temp)
         return temp
     
-    def roll_Damage_OneDiceMod(self, n, x, modifier):
+    def roll_Damage_OneDiceMod(self, n, x, modifier, target):
         temp = (n * self.r_Dice(x) + modifier)
         print("Usando arma:", self.name, "\nDano: causado", temp)
+        temp = temp*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(temp)
         return temp
     
-    def roll_Damage_OneDice(self, n, x):
+    def roll_Damage_OneDice(self, n, x, target):
         temp = (n * self.roll_Dice(x))
         print("Usando arma:", self.name, "\nDano: causado", temp)
+        temp = temp*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(temp)
         return temp
     
-    def roll_Damage_Fixed(self, modifier):
+    def roll_Damage_Fixed(self, modifier, target):
         print("Usou arma:", self.name, "\nDano causado:", modifier)
+        modifier = modifier*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(modifier)
         return modifier
     
-    def roll_DamageWithCountMod(self, n, x, modifier):
+    def roll_DamageWithCountMod(self, n, x, modifier, target):
         temp = self.roll_DiceWithCountMod(x, n, modifier)
         print("Usando arma:", self.name, "\nDano: causado", temp)
+        temp = temp*(-1)
+        if target is not None:
+            target.AttB_modifyAtr(temp)
         return temp
     
 class Usable_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state, durability):
         super().__init__(name, type, rarity, state)
         self.durability = durability
-        print("Adicionou o equipamento:", self.name)
+        print("Criou o equipamento:", self.name)
     
-    def useInSomeone(target, effect, self):
-        target.AttV_setValue(target.AttV_getValue() + effect)
-        self.durability -= 1
-        print("Usou", self.name, "em", self.target, "causando", self.effect, "\n Restam:", self.durability ,"usos")
+    def rollUse(self, x, hit):
+        temp = self.roll_Dice(x)
+        if temp < hit:
+            print("acerto com valor de dado de:" + temp)
+            if self.durability == 1:
+                print("Usou", self.name, "\nO item acabou")
+                self.setName(self.name + "usado")
+                self.state = "usado"
+                self.durability -= 1
+            elif self.durability < 1:
+                print("O item já está usado")
+            else:
+                self.durability -= 1
+                print("Usou", self.name, "\n Restam:", self.durability ,"usos")
+        else:
+            print("falha no uso de:" + self.name + " o dado foi menor que " + self.hit)
     
-    def use(self):
-        self.durability -= 1
-        print("Usou", self.name, "\n Restam:", self.durability ,"usos")
+    def useInSomeone(self, effect, target):
+        if self.durability == 1:
+            target.AttV_setValue(target.AttV_getValue() + effect)
+            self.durability -= 1
+            print("Usou", self.name, "em", target.name, "causando", self.effect, "\nO item acabou")
+            self.setName(self.name + " usado")
+            self.state = "usado"
+        elif self.durability < 1:
+            print("O item já está usado")
+        else:
+            self.durability -= 1
+            target.AttV_setValue(target.AttV_getValue() + effect)
+            print("Usou", self.name, "em", self.target, "causando", self.effect, "\n Restam:", self.durability ,"usos")
+
+    def Use(self):
+        if self.durability == 1:
+            print("Usou", self.name, "\nO item acabou")
+            self.setName(self.name + " usado")
+            self.state = "usado"
+            self.durability -= 1
+        elif self.durability < 1:
+            print("O item já está usado")
+        else:
+            self.durability -= 1
+            print("Usou", self.name, "\n Restam:", self.durability ,"usos")
     
     def getDurability(self):
         return self.durability
     
+    def addDurability(self, durability):
+        self.durability += durability
+    
 class Permanent_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state):
         super().__init__(name, type, rarity, state)
-        print("Criou o equipamento:", self.name)
+        print("Criar o equipamento:", self.name)
 
 
 class Permanent_Buff_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state, effect):
         super().__init__(name, type, rarity, state)
         self.effect = effect
-        print("Adicionou o equipamento", self.name)
+        print("Criou o equipamento:", self.name)
     
-    def Apply(target, self):
+    def applyInAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() + self.effect)
+        print("Aplicou", self.effect, "em", target.nome)
+        
+    def removeFromAttV(self, target):
+        target.AttV_setValue(target.AttV_getValue() - self.effect)
+        print("Removeu", self.effect, "de", target.nome)    
     
     def getEffect(self):
         return self.effect
+    
+    
 
     
 
