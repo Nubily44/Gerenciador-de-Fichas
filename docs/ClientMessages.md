@@ -34,6 +34,7 @@ Mensagens gerais:
     - rolagem de dado simples
 
     - Status online e dead man switch 
+
 #
     
 nome = input("Qual seria o nome do seu personagem?")

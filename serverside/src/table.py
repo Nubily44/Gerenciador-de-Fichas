@@ -30,4 +30,8 @@ class Table:
         for sheet in self.sheets:
             sheet.Display()
 
+    def ClearTable(self):
+        self.sheets.clear()
+    
+
     
