@@ -16,17 +16,18 @@ from equipment_template import Permanent_Buff_Template
 from table              import Table
 
 Send = 0
-Recieve = 0
+Receive = 0
 Ready = 0
 
 tempMessage = []
 
 def receive_numbers(port):
-    global Recieve, tempMessage
+    global receive, tempMessage
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('0.0.0.0', port))  # Listen on all available IPs
-    server_socket.listen(1)
+    server_socket.listen(20)
+    
     print(f"Waiting to receive messages on port {port}...")
 
     while True:
@@ -35,7 +36,7 @@ def receive_numbers(port):
 
         data = conn.recv(1024)
         if data:
-            Recieve = 1
+            receive = 1
             # Decode the received bytes and split into a list
             received_numbers = data.decode().split(',')
 
@@ -50,7 +51,7 @@ def receive_numbers(port):
         conn.close()
 
 def send_numbers(ip, port, array):
-    global Recieve, Send
+    global receive, Send
     """Function to send an array of 10 numbers to a specified IP and port."""
     
     if Send == 1:
@@ -59,7 +60,7 @@ def send_numbers(ip, port, array):
         if len(numbers_list) != 10:
             print("Invalid input. Please enter exactly 10 numbers.")
             Send = 0
-            Recieve = 1
+            receive = 1
             return
 
         print(f"Attempting to connect to {ip}:{port}")  
@@ -84,6 +85,56 @@ def send_numbers(ip, port, array):
         Send = 0
 
 
+def searchTable(i):
+    for x in range(i):
+        if i<10:
+            folder_name = f"table0{i}"
+        else:
+            folder_name = f"table{i}"
+        if os.path.exists(folder_name) and os.path.isdir(folder_name):
+            return True
+        else:
+            return False
+        
+def tableCheck(i):
+    if searchTable(i):
+        print("Mesa Encontrada")
+        return True
+    else:
+        print("Mesa não encontrada")
+        if i<10:
+            folder_name = f"table0{i}"
+        else:
+            folder_name = f"table{i}"
+        os.mkdir(folder_name)
+    
+def searchSheet(i):
+    for x in range(i):
+        if i<10:
+            file_name = f"sheet0{i}"
+        else:
+            file_name = f"sheet{i}"
+        if os.path.exists(file_name) and os.path.isfile(file_name):
+            return True
+        else:
+            return False
+
+def sheetCheck(i):
+    if searchSheet(i):
+        print("Ficha Encontrada")
+        return True
+    else:
+        print("Criando ficha")
+        if i<10:
+            file_name = f"sheet0{i}"
+        else:
+            file_name = f"sheet{i}"
+
+        with open(file_name, "w"):
+            pass
+
+
+
 
 # Testes
 character_sheet = Sheet_Template("Aragorn", 20, 15, 90)
@@ -100,7 +151,7 @@ permanent = Permanent_Template("Ring", 10, 2, 5)
 table = Table(1, "Table1")
 table.addSheet(character_sheet)
 table.addSheet(character_sheet2)
-table.displayTable()
+# table.displayTable()
 
 
 #   [0]  Primeiro Número: Remetente  
@@ -109,6 +160,7 @@ table.displayTable()
 
 #   [1]  Segundo Número: Id do Usuário
 #   5 digitos (aleatórios)
+#   0 - Mestre
 
 #   [2]  Terceiro Número: Id da Mesa
 #   Adicionado dinamicamente
@@ -119,11 +171,14 @@ table.displayTable()
 #   [4]  Quinto Número: Tipo de Mensagem:
 #   0 = Criar Mesa
 #   1 = Criar Ficha
-#   2 = Mudar Atributo
-#   3 = Criar Equipamento
+#   2 = Deletar Mesa
+#   3 = Deletar Ficha
+#   4 = Mudar Ficha de posição
+#   5 = 
+#   5 = Criar Equipamento
 
 #   [5]  Sexto Número: Valor 1
-#   Caso [4] = 3:
+#   Caso [4] = 5:
 #   0 = Arma
 #   1 = Usável
 #   2 = Permanente
@@ -139,11 +194,9 @@ table.displayTable()
 
 
 
-
-
 if __name__ == "__main__":
     PORT = 5000  # You can adjust this port
-    FRIEND_IP = '26.232.143.16'  # Change to your friend's IP if needed
+    LOG_IP = '26.232.143.16'  # Change to your friend's IP if needed
 
     # Start the receiver thread
     receive_thread = threading.Thread(target=receive_numbers, args=(PORT,))
@@ -152,28 +205,28 @@ if __name__ == "__main__":
 
     # Main traffic light loop
     while True:
-        if Recieve == 1 and Ready == 0:
+        if receive == 1 and Ready == 0:
             # Process the received message
             print("Processing the message...")
 
-            message = tempMessage
+            message = [0, 00000, 3, 1, 0, 0, 0, 0, 0 ,0]
+            #message = tempMessage
             tempMessage = []
+
 
             sender = message[0]
             idn = message[1]
             table_id = message[2]
             sheet_id = message[3]
 
-            tables = pd.read_csv("tables.csv")
-            tables.head()
-
-            
             value = []
             for i in range(4):
                 value[i] = message[i+5]
             
-            table 
-            temp_sheet = table.getSheet(sheet_id)
+            print(sender)
+            print(idn)
+            print(table_id)
+            tableCheck(table_id)
 
 
 
@@ -189,6 +242,6 @@ if __name__ == "__main__":
 
         if Ready == 1:
             Send = 1
-            Recieve = 0  # Reset Recieve after processing
-            send_numbers(FRIEND_IP, PORT, "1,100,100,100,100,100,100,100,100,100")
+            receive = 0  # Reset receive after processing
+            send_numbers(LOG_IP, PORT, "1,100,100,100,100,100,100,100,100,100")
             Ready = 0  # Reset Ready after sending
