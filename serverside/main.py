@@ -99,10 +99,8 @@ def send_phrase(ip, port, array):
             send_socket.close()
         Send = 0
 
-
-
 #FODASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar, conseguimos. Espero q essa função queime no inferno
+#Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar, conseguimos. Espero q essa função queime no inferno
 
 def identify(ip):
     path = os.path.join("serverside", "idns.csv")
@@ -569,15 +567,21 @@ if __name__ == "__main__":
                         print("Existencia da mesa")
                         checkTable(table_id)
                         if searchTable(table_id):
-                            checkSheet(sheet_id, table_id)
-                            print("Existencia da ficha")
-                            with open(json_path, "r") as json_file:
-                                sheet_data = json.load(json_file)
-                            character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                            Send= 1
-                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
-                            send_thread.daemon = True
-                            send_thread.start()
+                            if checkSheet(sheet_id, table_id):
+                                print("Existencia da ficha")
+                                with open(json_path, "r") as json_file:
+                                    sheet_data = json.load(json_file)
+                                character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                Send= 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                                send_thread.daemon = True
+                                send_thread.start()
+                            else:
+                                Send= 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha não encontrada"))
+                                send_thread.daemon = True
+                                send_thread.start()
+
                     
                     case 14: # Display fichas de uma mesa
                         sheet_max = checkExistingSheets(table_id)

@@ -146,6 +146,7 @@ def run_client(server_ip, server_port):
                 elif escolha1 == 4:
                     atributo = input("Insira o atributo que deseja modificar:\n1 - AttB\n2 - AttC\n3 - AttV\n4 - nome\nInput: ")
                     type = input("Insira:\n0 - visualizar\n1 - modificar\nInput: ")
+                    valor = ""
                     if type == 1:
                         valor = input("Insira o novo valor: ")
                     send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 6, atributo, type, valor, -1, -1])
