@@ -52,6 +52,27 @@ class Sheet_Template:
         print(", ".join(self.getPermanents()))
 
         print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
+    
+    def logging(self, f):
+        with open(f, "w") as f:
+            f.write(f"Nome: {self.nome}\n")
+            f.write(f"B: {self.AttB}\n")
+            f.write(f"C: {self.AttC}\n")
+            f.write(f"V: {self.AttV}\n")
+            f.write(f"Alive: {self.Alive}\n")
+            f.write("\n-=-=-=-=-=-=-Backpack-=-=-=-=-=-=-\n")
+
+            # Write Weapons
+            f.write(f"-Weapons: {', '.join(self.getWeapons())}\n")
+
+            # Write Usables
+            f.write(f"-Usables: {', '.join(self.getUsables())}\n")
+
+            # Write Permanents
+            f.write(f"-Permanents: {', '.join(self.getPermanents())}\n")
+
+            f.write("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
+
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -233,7 +254,6 @@ class Sheet_Template:
                 self.attV -= damage
             else:
                 print("Bateu mal. Errou o alvo")
-            
     
     def wink(self, target):
         print(self.nome, "piscou para", target.nome)
