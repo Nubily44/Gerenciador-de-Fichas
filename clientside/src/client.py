@@ -6,7 +6,9 @@ import os
 Id = 1
 tempMessage = []
 proceed = 0
-
+rec = 0
+def sep():
+    print("\n")
 
 def getId():
     global Id
@@ -31,51 +33,46 @@ def getId():
 def receive_data(server_ip, server_port):
     global tempMessage
     global proceed
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("0.0.0.0", server_port))
-    server_socket.listen(1)
-
-    print(f"Waiting to receive messages on port {server_port}...")
+    global rec
+    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listen_socket.bind(("0.0.0.0", server_port))
+    listen_socket.listen(1)
 
     while True:
-        conn, addr = server_socket.accept()
-        print(f"Connected by {addr}")
+        conn, addr = listen_socket.accept()
 
         data = conn.recv(1024)
         if data:
-            received_data = data.decode()
-            print("recebe frase", len(received_data))
-            receive_data = received_data.split(",")
-            print(f"Received data: {receive_data}")
-            if len(receive_data) == 10:
-
+            received_data = data.decode('utf-8')
+            
+            if len(received_data.split(",")) == 10:
+                receive_data = received_data.split(",")
                 tempMessage = receive_data
                 proceed += 1
+                print(f"Dados recebidos: {received_data}")
+
+            else:
+                received_data = str(received_data)
+                print(f"Dados recebidos: {received_data}")
+                rec += 1
 
             ack_message = "Phrase received"
             conn.send(ack_message.encode())
-            print("Acknowledgment sent to sender.")
         conn.close()
 
 
 def send_numbers(server_ip, server_port, numbers):
-    # Ensure numbers_list is already a list and has 10 elements
-    if len(numbers) != 10:
-        print("Invalid input. Please enter exactly 10 numbers.")
-        return
     
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
         client_socket.connect((server_ip, server_port))
         
-        # Send the list of numbers as a comma-separated string
-        client_socket.send(','.join(map(str, numbers)).encode())
-        print(f"Sent numbers: {numbers}")
-
+        message_to_send = ','.join(map(str, numbers))
+        print(f"Enviando: {message_to_send}")
+        client_socket.send(message_to_send.encode())
+        print(numbers)
         ack_data = client_socket.recv(1024)
-        if ack_data:
-            print("Acknowledgment from receiver:", ack_data.decode())
 
     except socket.error as e:
         print(f"Failed to connect to the receiver. Error: {e}")
@@ -86,35 +83,133 @@ def send_numbers(server_ip, server_port, numbers):
 def run_client(server_ip, server_port):
     global tempMessage
     global proceed
+    global rec
     Id = getId()
 
+    print("Iniciando autenticação com o servidor...")
     #Autenticação
     send_numbers(server_ip, server_port, [0, str(Id), -1, -1, 5, -1, -1, -1, -1, -1])
     
     while proceed < 1:
         pass
     
-    type(tempMessage)
-    print(f"TempMessage: {tempMessage}")
-    with open("clientside", "src", "client_id.txt", "w") as f:
-        tempId = int(tempMessage[1])
-        f.write(tempId)
-
-    print ("Começando o gerenciador de fichas online")
-    entrada =  input("Insira o código da mesa caso queira conectar a uma mesa existente ou -1 caso queira iniciar uma mesa como Dungeon Master:\n")
+    print("Autenticação realizada com sucesso!")
+    sep()
+    print("Agora você está conectado ao servidor!")
+    sep()
     
-    if entrada == -1:
-        pass  
+    path = os.path.join("clientside", "src", "client_id.txt")
+    with open(path, "w") as f:
+        tempId = tempMessage[1]
+        f.write(tempId)
+    mesas = int(tempMessage[2])
+    print ("Começando o gerenciador de fichas online")
+    print (f"O servidor atualmente possui {mesas} mesas.")
+    mesa =  input("Insira:\n-1 - criar uma nova mesa, como Dungeon Master\nn - entrar em uma mesa existente (com n sendo o número da mesa)\nInput: ")
+    sep()
+    
+
+    if mesa == -1:
+        send_numbers(server_ip, server_port, [0, str(Id), (mesas+1), -1, 0, -1, -1, -1, -1, -1]) # <- mesaS, não mesa (é pra criar uma mesa nova)
+    else:
+        print(f"Entrando na mesa {mesa}...")
+        print(f"Na mesa {mesa}, qual ficha você deseja acessar?")
+        ficha = input("Insira:\nn - para acessar a ficha n\n-1 - criar uma nova ficha\n-2 - deletar mesa\nInput: ")
+        sep()
+
+        if ficha == -1:
+            send_numbers(server_ip, server_port, [0, str(Id), mesa, mesas, 1, -1, -1, -1, -1, -1])
+        elif ficha == -2:
+            send_numbers(server_ip, server_port, [0, str(Id), mesa, -1, 2, -1, -1, -1, -1, -1])
+        else:
+            rec += 1
+            while rec < 1:
+                pass
+            print("Agora você está conectado a uma ficha!")
+            while True:
+                print("O que deseja fazer?")
+                escolha1 = input("Insira:\n0 - sair\n1 - visualizar ficha\n2 - deletar ficha\n3 - mudar ficha de mesa\n4 - modificar ou receber atributo\n5 - adicionar item\n6 - fazer uma ação\n7 - usar um equipamento\n8 - deletar um equipamento\n9 - modificar um equipamento\nInput: ")
+                escolha1 = int(escolha1)
+                if escolha1 == 0:
+                    break
+
+                elif escolha1 == 1:
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 13, -1, -1, -1, -1, -1])
+
+                elif escolha1 == 2:
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 3, -1, -1, -1, -1, -1])
+
+                elif escolha1 == 3:
+                    escolha2 = input("Insira o número da mesa para a qual deseja mover a ficha: ")
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 4, escolha2, -1, -1, -1, -1])
+
+                elif escolha1 == 4:
+                    atributo = input("Insira o atributo que deseja modificar:\n1 - AttB\n2 - AttC\n3 - AttV\n4 - nome\nInput: ")
+                    type = input("Insira:\n0 - visualizar\n1 - modificar\nInput: ")
+                    if type == 1:
+                        valor = input("Insira o novo valor: ")
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 6, atributo, type, valor, -1, -1])
+
+                elif escolha1 == 5:
+                    nome = input("Insira o nome do item: ")
+                    tipo = input("Insira o tipo do item: ")
+                    raridade = input("Insira a raridade do item: ")
+                    estado = input("Insira o estado do item: ")
+                    classe = input("Insira a classe do item:\n0 - arma\n1 - usável\n2 - permanente\n3 - permanente com buff\nInput: ")
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 7, nome, tipo, raridade, estado, classe])
+
+                elif escolha1 == 6:
+                    acao = input("Insira a ação que deseja fazer:\n0 - dançar\n1 - punch\n2 - piscar\n3 - dar um item\nInput: ")
+                    dest = input("Insira o destino da ação: ")
+                    if acao == 3:
+                        item = input("Insira o nome do item: ")
+                        quantidade = input("Insira a quantidade de itens: ")
+                        send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 9, acao, dest, item, quantidade, -1])
+
+                    else:
+                        send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 9, acao, dest, -1, -1, -1])
+
+                elif escolha1 == 7:
+                    print("Essa feature ainda não foi implementada :(")    
+
+                elif escolha1 == 8:
+                    nome = input("Insira o nome do item que deseja deletar: ")
+                    send_numbers(server_ip, server_port, [0, str(Id), mesa, ficha, 11, nome, -1, -1, -1, -1])
+
+                elif escolha1 == 9:
+                    print("Essa feature ainda não foi implementada :(")
+
+                else:
+                    print("Opção inválida")
+                sep()
+
+                   
+
+                   
+
+        
+
+
 
 
 if __name__ == "__main__":
-    getId()
-    print(getId())
-    server_ip = input("insira o ip do server:")
-    server_port = int(input("insira a porta do servidor:"))
+    option1 = 0 
+    print("Bem-vindo ao gerenciador de fichas online!")
+    option1 = input("É sua primeira vez aqui?\nSim - digite 0\nNão - digite 1\n Input: ")
+    sep()
+    if option1 == 0:
+        print("\nEsse programa se conecta a um servidor, para gerenciar fichas de rpg. Para isso, basta selecionar os números correspondentes as ações desejadas.\nBom Jogo!")
+        sep()
+    else:
+        pass
+    print("Para se conectar ao servidor:")
+    server_ip = input("ip do servidor: ")
+    server_port = int(input("porta do servidor: "))
+
+    sep()
 
     receive_data_thread = threading.Thread(target=receive_data, args=(server_ip, server_port))
     receive_data_thread.daemon = True
     receive_data_thread.start()
-
+    
     run_client(server_ip, server_port)

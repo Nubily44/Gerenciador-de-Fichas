@@ -53,6 +53,25 @@ class Sheet_Template:
 
         print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
     
+    def DisplayString(self):
+        display_string = (
+            f"Nome: {self.nome}\n"
+            f"B: {self.AttB}\n"
+            f"C: {self.AttC}\n"
+            f"V: {self.AttV}\n"
+            f"Alive: {self.Alive}\n"
+            "\n-=-=-=-=-=-=-Backpack-=-=-=-=-=-=-\n"
+            "-Weapons: \n"
+            f"{', '.join(self.getWeapons())}\n"
+            "-Usables: \n"
+            f"{', '.join(self.getUsables())}\n"
+            "-Permanents: \n"
+            f"{', '.join(self.getPermanents())}\n"
+            "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
+        )
+
+        return display_string
+
     def logging(self, f):
         with open(f, "w") as f:
             f.write(f"Nome: {self.nome}\n")
@@ -73,6 +92,39 @@ class Sheet_Template:
 
             f.write("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
 
+    def to_dict(self):
+        return {
+            "nome": self.nome,
+            "AttB": self.AttB,
+            "AttC": self.AttC,
+            "AttV": self.AttV,
+            "Alive": self.Alive,
+            "WeaponsBackpack": [
+                {"weapon": weapon[0].getName(), "quantity": weapon[1]} for weapon in self.WeaponsBackpack
+            ],
+            "UsablesBackpack": [
+                {"usable": usable[0].getName(), "quantity": usable[1]} for usable in self.UsablesBackpack
+            ],
+            "PermanentsBackpack": [
+                {"permanent": permanent[0].getName(), "quantity": permanent[1]} for permanent in self.PermanentsBackpack
+            ]
+        }
+
+    def from_dict(cls, data, weapons_dict, usables_dict, permanents_dict):
+        sheet = cls(data['nome'], data['AttB'], data['AttC'], data['AttV'])
+        sheet.Alive = data['Alive']
+
+        # Rebuild WeaponsBackpack, UsablesBackpack, PermanentsBackpack from dictionaries
+        sheet.WeaponsBackpack = [
+            [weapons_dict[item['weapon']], item['quantity']] for item in data['WeaponsBackpack']
+        ]
+        sheet.UsablesBackpack = [
+            [usables_dict[item['usable']], item['quantity']] for item in data['UsablesBackpack']
+        ]
+        sheet.PermanentsBackpack = [
+            [permanents_dict[item['permanent']], item['quantity']] for item in data['PermanentsBackpack']
+        ]
+        return sheet
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

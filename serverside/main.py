@@ -6,18 +6,20 @@ import threading
 import pandas as pd
 import random
 import json
+import shutil
+import glob
 
 # Add the src folder to the system path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-# from sheet_template  import Sheet_Template  # Import the class
-# from equipment_template import (
-#     Weapon_Template,
-#     Usable_Template,
-#     Permanent_Template,
-#     Permanent_Buff_Template,
-# )
-# from table import Table
+from sheet_template  import Sheet_Template  # Import the class
+from equipment_template import (
+    Weapon_Template,
+    Usable_Template,
+    Permanent_Template,
+    Permanent_Buff_Template,
+)
+from table import Table
 
 Send = 0
 Receive = 0
@@ -78,6 +80,7 @@ def send_numbers(ip, port, array):
             send_socket.send(array.encode('utf-8'))
             print(f"\nSent numbers: \n{array}")
             ack_data = send_socket.recv(1024)
+            
         finally:
             send_socket.close()
         Send = 0
@@ -99,7 +102,7 @@ def send_phrase(ip, port, array):
 
 
 #FODASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# Caro professor, perdemos 5 horas da nossa vida tentando fazer esse código funcionar, conseguimos. Espero q essa função queime no inferno
+# Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar, conseguimos. Espero q essa função queime no inferno
 
 def identify(ip):
     path = os.path.join("serverside", "idns.csv")
@@ -156,7 +159,17 @@ def checkTable(i):
             folder_name = f"table{i}"
         full_path = os.path.join("serverside", "tables", folder_name)
         os.mkdir(full_path)
-    
+
+def checkExistingTables():
+    max = 0
+    for i in range(100):
+        if searchTable(i):
+            max = i
+        else:
+            break
+    return max
+
+
 def searchSheet(i, table):
     for x in range(i):
         if i<10:
@@ -168,6 +181,21 @@ def searchSheet(i, table):
             return True
         else:
             return False
+
+def checkExistingSheets(i):
+    max = 0
+    for x in range(i):
+        if i<10:
+            folder_name = f"table0{i}"
+        else:
+            folder_name = f"table{i}"
+        full_path = os.path.join("serverside", "tables", folder_name)
+        for y in range(100):
+            if searchSheet(y, i):
+                max = y
+            else:
+                break
+    return max
 
 def checkSheet(i, table):
     if searchSheet(i, table):
@@ -205,56 +233,48 @@ def checkSheet(i, table):
 # table.displayTable()
 
 
+# -1 = null (sem valor atribuído)
+
+
 #   [0]  Primeiro Número: Remetente  
 #   0 = Cliente 
 #   1 = Servidor
 
 #   [1]  Segundo Número: Id do Usuário
 #   Sistema de Unicidade
+#   n - Id do Usuário
 #   0 - Mestre
 #   1 - Usuário sem Id
 
 #   [2]  Terceiro Número: Id da Mesa
 #   Adicionado dinamicamente
 #   -1 = Sem Mesa
+#   n = Id da Mesa
 
 #   [3]  Quarto Número: Id da Ficha
 #   Adicionado dinamicamente
 #   -1 = Sem Ficha
+#   n = Id da Ficha
 
-#   [4]  Quinto Número: Tipo de Mensagem:
-#   0 = Criar Mesa
-#   1 = Criar Ficha
-#   2 = Deletar Mesa
-#   3 = Deletar Ficha
-#   4 = Mudar Ficha de posição
-#   5 = Identificar Usuário
-#   6 = Modificar atributo
-#   7 = Criar Equipamento
-#   8 = Modificar ficha (mochilas e ações)
-#   9 = Usar Equipamento
-#   10 = Deletar Equipamento
-#   11 = Modificar Equipamento
-#   12 = Display Ficha
-#   13 = Display TableList
-#   14 = Display SheetList
-#   15 = Display WeaponList
+#[feito), (testado)]   [4]  Quinto Número: Tipo de Mensagem:
+#ct   0 = Criar Mesa                          [-1, -1, -1, -1, -1]
+#ct   1 = Criar Ficha                         ["nome", B, C, V, -1]       nome, AttB, AttC, AttV
+#ct   2 = Deletar Mesa                        [-1, -1, -1, -1, -1]
+#ct   3 = Deletar Ficha                       [-1, -1, -1, -1, -1]
+#c   4 = Mudar Ficha de posição              [n, -1, -1, -1, -1]         n = Id da mesa para onde a ficha será movida
+#c   5 = Identificar Usuário                 [-1, -1, -1, -1, -1]
+#c   6 = Modificar atributo                  [n, t, m, -1, -1]           n = Id do atributo - 1 = AttB, 2 = AttC, 3 = AttV, 4 = "nome", t = 0 - Get, 1 - Set, m = valor para set, -1 para get
+#c   7 = Criar Equipamento                   ["nome", T, R, S, t]        nome, tipo, raridade, estado, tipo de equipamento: 0 - Weapon, 1 - Usable, 2 - Permanent, 3 - Permanent Buff
+#   8 = Modificar ficha (mochilas)            [t, n, -1, -1, -1]          t = tipo - 0 = Weapon, 1 = Usable, 2 = Permanent, 3 = Permanent Buff
+#   9 = Ações                                [t, n, -1, -1, -1]          t = tipo de ação, 0 = dance[0, n = target], 1 = punch[1, n = target, d = damage], 2 = wink[2, n = target], 3 = send[3, n = target, x= item, m = quantidade]                                                                                   
+#   10 = Usar Equipamento                    [t, n, -1, -1, -1]          t = tipo de equipamento, n = Id do equipamento na mochila
+#   11 = Deletar Equipamento                ["nome", -1, -1, -1, -1]     nome = nome do equipamento
+#   12 = Modificar Equipamento              ["nome", -1, -1, -1, -1]     nome = nome do equipamento
+#c   13 = Display Ficha                      [-1, -1, -1, -1, -1]
+#c   14 =  Display fichas de uma mesa       [-1, -1, -1, -1, -1]
 #   // = help
 
 #   [5]  Sexto Número: Valor 1
-#   Caso [4] = 0:
-#   SEM ATRIBUTOS EXTRAS
-
-#   Caso [4] = 1:
-#   nome da ficha
-
-#   Caso [4] = 7:
-#   0 = Arma
-#   1 = Usável
-#   2 = Permanente
-#   3 = Buff Permanente
-
-#   Caso [4] = 9:
 
 #   [6]  Sétimo Número: Valor 2
 
@@ -267,8 +287,7 @@ def checkSheet(i, table):
 
 
 if __name__ == "__main__":
-    PORT = 5000  # You can adjust this port
-    LOG_IP = '26.232.143.16'  # Our Ip
+    PORT = 5000  # You can adjust this port # Our IP address
 
     # Start the receiver thread
     receive_thread = threading.Thread(target=receive_data, args=(PORT,))
@@ -293,8 +312,6 @@ if __name__ == "__main__":
                 tempIp = []
                 tempIp2 = []
 
-                message = [int(x) for x in message]
-
                 sender = int(message[0])
                 idn = int(message[1])
                 table_id = int(message[2])
@@ -303,62 +320,279 @@ if __name__ == "__main__":
                 values = [None] * 5
                 for i in range(4):
                     values[i] = message[5+i]
+                if table_id<10:
+                    txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    if sheet_id<10:
+                        txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
+                else:
+                    txt_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
                 
                 if table_id<10:
-                    path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.json")
                     if sheet_id<10:
-                        path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
+                        json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.json")
                 else:
-                    path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
-                
-                match message[4]:
-                    case 0:
+                    json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
+
+                if table_id<10:
+                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
+                else:
+                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
+
+                if table_id<10:
+                    table_path = os.path.join("serverside","tables",f"table0{str(table_id)}")
+                else:
+                    table_path = (os.path.join("serverside","tables",f"table{str(table_id)}"))
+
+                match message_type:
+                    case 0: # Criar Mesa
                         if sender == 0:
                             checkTable(table_id)
-                            Send=1
                             Send = 1
                             send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Mesa criada com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
                         else:
                             pass
-                    case 1:
+                    case 1: # Criar Ficha
                         if sender == 0:
                             checkTable(table_id)
-                            checkSheet(sheet_id, table_id)
-                            for i in range(3):
-                                values[i+1] = int(values[i+1])
-                            values[0] = str(values[0])
-                            character_sheet_instance = Sheet_Template(values[0], values[1], values[2], values[3])
-                            json_str = character_sheet_instance.to_dict()
-                            with open(path, "w") as json_file:
-                                json.dump(json_str, json_file, indent=4)
-                            character_sheet_instance.logging(path)
-                            
+                            if searchTable(table_id):
+                                checkSheet(sheet_id, table_id)
+                                for i in range(3):
+                                    values[i+1] = int(values[i+1])
+                                    print(values[i+1])
+                                values[0] = str(values[0])
+                                print(values[0])
+                                character_sheet_instance = Sheet_Template(values[0], values[1], values[2], values[3])
+                                json_str = character_sheet_instance.to_dict()
+                                with open(json_path, "w") as json_file:
+                                    json.dump(json_str, json_file, indent=4)
+                                character_sheet_instance.logging(txt_path)
+                                Send = 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha criada com sucesso"))
+                                send_thread.daemon = True
+                                send_thread.start()
+                                print(character_sheet_instance.DisplayString())
+                                send_thread2 = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                                send_thread2.daemon = True
+                                send_thread2.start()
+
+                    case 2: # Deletar Mesa
+                        if sender == 0:
+                            if searchTable(table_id):
+                                shutil.rmtree(table_path)
+                                Send = 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Mesa deletada com sucesso"))
+                                send_thread.daemon = True
+                                send_thread.start()
+                    
+                    case 3: # Deletar Ficha
+                        if sender == 0:
+                            if searchSheet(sheet_id, table_id):
+                                os.remove(txt_path)
+                                os.remove(json_path)
+                                Send = 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha deletada com sucesso"))
+                                send_thread.daemon = True
+                                send_thread.start()
+
+                    case 4: # Mudar Ficha de posição
+                        if sender == 0:
+
+                            table_path_sent_to = os.path.join("serverside","tables",f"table{str(values[0])}")
+
+                            if not os.path.exists(table_path_sent_to):
+                                checkTable(values[0])
+                            for file_type in ['*.json', '*.txt']:
+                                files = glob.glob(os.path.join(table_path, file_type))
+                                
+                                for file in files:
+                                    shutil.move(file, table_path_sent_to)
+
                             Send = 1
-                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha criada com sucesso"))
+                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha movida com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
-                        else:
-                            pass
 
-                    case 5:
+
+                    case 5: # Identificar Usuário
                         print("Identificação")
+                        mesa_max = checkExistingTables()
+                        sheet_max = checkExistingSheets(table_id)
                         idn = identify(ip)
                         Send = 1
                         send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Identificação feita com sucesso"))
                         send_thread.daemon = True
                         send_thread.start()
                         
-                        send_thread = threading.Thread(target=send_numbers, args=(ip, PORT, [1, idn, table_id, sheet_id, 5, 0, 0, 0, 0, 0]))
+                        send_thread = threading.Thread(target=send_numbers, args=(ip, PORT, [1, idn, mesa_max, sheet_max, 5, 0, 0, 0, 0, 0]))
                         send_thread.daemon = True
                         send_thread.start()
 
+                    case 6: # Modificar atributo
+                        if sender == 0:
+                            if searchSheet(sheet_id, table_id):
+                                with open(json_path, "r") as json_file:
+                                    data = json.load(json_file)
+                                sheet_object = Sheet_Template.from_dict(data)
 
+
+                                if values[0] == 1:
+                                    if values[1] == 0:
+                                        phrase = sheet_object.getAttB()
+                                    elif values[1] == 1:
+                                        sheet_object.setAttB(values[2])
+                                if values[0] == 2:
+                                    if values[1] == 0:
+                                        phrase = sheet_object.getAttC()
+                                    elif values[1] == 1:
+                                        sheet_object.setAttC(values[2])
+                                if values[0] == 3:
+                                    if values[1] == 0:
+                                        phrase = sheet_object.getAttV()
+                                    elif values[1] == 1:
+                                        sheet_object.setAttV(values[2])
+
+
+                                json_str = sheet_object.to_dict()
+                                with open(json_path, "w") as json_file:
+                                    json.dump(json_str, json_file, indent=4)
+                                character_sheet_instance.logging(txt_path)
+                                
+                                Send = 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha atualizada com sucesso"))
+                                send_thread.daemon = True
+                                send_thread.start()
+                                print(character_sheet_instance.DisplayString())
+                                send_thread2 = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                                send_thread2.daemon = True
+                                send_thread2.start()
+
+                    case 7: # Criar Equipamento
+                        if sender == 0:
+                            if searchSheet(sheet_id, table_id):
+                                if table_id<10:
+                                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
+                                else:
+                                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
+                                
+                                if values[4] == 0:
+                                    equipment_instance = Weapon_Template(values[0], values[1], values[2], values[3])
+                                if values[4] == 1:
+                                    equipment_instance = Usable_Template(values[0], values[1], values[2], values[3])
+                                if values[4] == 2:
+                                    equipment_instance = Permanent_Template(values[0], values[1], values[2], values[3])
+                                if values[4] == 3:
+                                    equipment_instance = Permanent_Buff_Template(values[0], values[1], values[2], values[3])
+                                
+                                with open(json_path, "r") as json_file:
+                                    sheet_data = json.load(json_file)
+
+                                Send = 1
+                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Equipamento criado com sucesso"))
+                                send_thread.daemon = True
+                                send_thread.start()
+
+                    case 8: #Modificar ficha (mochilas e ações)
+                        print("teste")
+                        
+                    case 9: #Acões
+                        match values[0]:
+                            case 0:
+                                if searchSheet(sheet_id, table_id):
+                                    other_id = values[1]
+                                    with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                    if searchSheet(other_id, table_id):
+                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                        with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        character_sheet_instance.dance(character_sheet_instance2)
+                                        Send= 1
+                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Dancou com ", character_sheet_instance2.nome()))
+                                        send_thread.daemon = True
+                                        send_thread.start()
+                            case 1:
+                                if searchSheet(sheet_id, table_id):
+                                    other_id = values[1]
+                                    with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                    if searchSheet(other_id, table_id):
+                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                        with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        character_sheet_instance.punch(character_sheet_instance2,values[2])
+                                        Send= 1
+                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Você socou", character_sheet_instance2.nome()))
+                                        send_thread.daemon = True
+                                        send_thread.start()  
+                            case 2:
+                                if searchSheet(sheet_id, table_id):
+                                    other_id = values[1]
+                                    with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                    if searchSheet(other_id, table_id):
+                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                        with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                        
+                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        character_sheet_instance.wink(character_sheet_instance2)
+                                        Send= 1
+                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Piscou para", character_sheet_instance2.nome()))
+                                        send_thread.daemon = True
+                                        send_thread.start()      
+                            case 3:
+                                if searchSheet(sheet_id, table_id):
+                                    other_id = values[1]
+                                    with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                    if searchSheet(other_id, table_id):
+                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                        with open(json_path, "r") as json_file:
+                                            sheet_data = json.load(json_file)
+                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        character_sheet_instance.send(character_sheet_instance2,values[2], values[3])
+                                        Send= 1
+                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.nome()))
+                                        send_thread.daemon = True
+                                        send_thread.start() 
+
+                    case 13: # Display Ficha
+                        print("Existencia da mesa")
+                        checkTable(table_id)
+                        if searchTable(table_id):
+                            checkSheet(sheet_id, table_id)
+                            print("Existencia da ficha")
+                            with open(json_path, "r") as json_file:
+                                sheet_data = json.load(json_file)
+                            character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                            Send= 1
+                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                            send_thread.daemon = True
+                            send_thread.start()
+                    
+                    case 14: # Display fichas de uma mesa
+                        sheet_max = checkExistingSheets(table_id)
+                        Send= 1
+                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, sheet_max))
+                        send_thread.daemon = True
+                        send_thread.start()
+                    
                 Ready = 1
+                #send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha criada com sucesso"))
+                #send_thread.daemon = True
+                #send_thread.start()
 
         with lock:
-            if Ready == 1:
             
+            if Ready == 1:
                 Receive = 0
                 Ready = 0   

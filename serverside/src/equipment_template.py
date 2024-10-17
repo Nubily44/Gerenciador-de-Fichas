@@ -64,6 +64,34 @@ class Weapon_Template(Equipment_Template):
         self.range = range
         print("Criou arma:", name, "\n tipo:", type, "\n raridade:", rarity, "\n estado:", state)
     
+    def DisplayString(self):
+        display_string = (
+            f"Weapon: {self.name}\n"
+            f"Type: {self.type}\n"
+            f"Rarity: {self.rarity}\n"
+            f"State: {self.state}\n"
+            f"Range: {self.range}\n"
+            "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
+        )
+        return display_string
+
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            'range': self.range
+        })
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data['name'],
+            type=data['type'],
+            rarity=data['rarity'],
+            state=data['state'],
+            range=data['range']
+        )
+    
     def getRange(self):
         return self.range
     
@@ -123,6 +151,34 @@ class Usable_Template(Equipment_Template):
         self.durability = durability
         print("Criou o equipamento:", self.name)
     
+    def DisplayString(self):
+        display_string = (
+            f"Usable: {self.name}\n"
+            f"Type: {self.type}\n"
+            f"Rarity: {self.rarity}\n"
+            f"State: {self.state}\n"
+            f"Durability: {self.durability}\n"
+            "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
+        )
+        return display_string
+
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            'durability': self.durability
+        })
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data['name'],
+            type=data['type'],
+            rarity=data['rarity'],
+            state=data['state'],
+            durability=data['durability']
+        )
+
     def rollUse(self, x, hit):
         temp = self.roll_Dice(x)
         if temp < hit:
@@ -177,13 +233,63 @@ class Permanent_Template(Equipment_Template):
         super().__init__(name, type, rarity, state)
         print("Criar o equipamento:", self.name)
 
+    def DisplayString(self):
+        display_string = (
+            f"Permanent: {self.name}\n"
+            f"Type: {self.type}\n"
+            f"Rarity: {self.rarity}\n"
+            f"State: {self.state}\n"
+            "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
+        )
+        return display_string
 
-class Permanent_Buff_Template(Equipment_Template):
+    def to_dict(self):
+        data = super().to_dict()
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data['name'],
+            type=data['type'],
+            rarity=data['rarity'],
+            state=data['state']
+        )
+
+class Permanent_Buff_Template(Permanent_Template):
     def __init__(self, name, type, rarity, state, effect):
         super().__init__(name, type, rarity, state)
         self.effect = effect
         print("Criou o equipamento:", self.name)
     
+    def DisplayString(self):
+        display_string = (
+            f"Permanent Buff: {self.name}\n"
+            f"Type: {self.type}\n"
+            f"Rarity: {self.rarity}\n"
+            f"State: {self.state}\n"
+            f"Effect: {self.effect}\n"
+            "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
+        )
+        return display_string
+
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            'effect': self.effect
+        })
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data['name'],
+            type=data['type'],
+            rarity=data['rarity'],
+            state=data['state'],
+            effect=data['effect']
+        )
+
     def applyInAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() + self.effect)
         print("Aplicou", self.effect, "em", target.nome)
