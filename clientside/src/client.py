@@ -107,7 +107,7 @@ def run_client(server_ip, server_port):
     print (f"O servidor atualmente possui {mesas} mesas.")
     mesa =  input("Insira:\n-1 - criar uma nova mesa, como Dungeon Master\nn - entrar em uma mesa existente (com n sendo o número da mesa)\nInput: ")
     sep()
-    
+    mesa = int(mesa)
 
     if mesa == -1:
         send_numbers(server_ip, server_port, [0, str(Id), (mesas+1), -1, 0, -1, -1, -1, -1, -1]) # <- mesaS, não mesa (é pra criar uma mesa nova)
@@ -116,7 +116,7 @@ def run_client(server_ip, server_port):
         print(f"Na mesa {mesa}, qual ficha você deseja acessar?")
         ficha = input("Insira:\nn - para acessar a ficha n\n-1 - criar uma nova ficha\n-2 - deletar mesa\nInput: ")
         sep()
-
+        ficha = int(ficha)
         if ficha == -1:
             send_numbers(server_ip, server_port, [0, str(Id), mesa, mesas, 1, -1, -1, -1, -1, -1])
         elif ficha == -2:

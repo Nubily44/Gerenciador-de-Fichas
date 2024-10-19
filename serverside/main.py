@@ -424,7 +424,7 @@ if __name__ == "__main__":
                         send_thread.daemon = True
                         send_thread.start()
                         
-                        send_thread = threading.Thread(target=send_numbers, args=(ip, PORT, [1, idn, mesa_max, sheet_max, 5, 0, 0, 0, 0, 0]))
+                        send_thread = threading.Thread(target=send_numbers, args=(ip, PORT, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
                         send_thread.daemon = True
                         send_thread.start()
 
