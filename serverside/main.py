@@ -22,9 +22,9 @@ from equipment_template import (
 )
 from table import Table
 
-Send = 0
-Receive = 0
-Ready = 0
+Send = 0 # 0 = Not sending, 1 = Sending
+Receive = 0 # 0 = Not receiving, 1 = Receiving
+Ready = 0 # 0 = Not ready, 1 = Ready
 
 tempMessage = []
 tempIp = []
@@ -41,7 +41,6 @@ class ClientHandler(threading.Thread):
         self.addr = addr
         self.client_Ip = addr[0]
         self.alive = 1
-        self.lock = threading.Lock()
         self.lastTime = time.time()
         self.conn.settimeout(timeout)
 
@@ -60,10 +59,6 @@ class ClientHandler(threading.Thread):
                         tempMessage = received_data
                         tempIp = self.client_Ip
                         conn = self.conn
-                        
-                    ack_message = "data received"
-                    received_data = []
-                    self.conn.send(ack_message.encode('utf-8'))
 
                 if len(received_data) == 2 and int(received_data[0].strip("[]")) == 1:
                     self.lastTime = time.time()
@@ -74,12 +69,22 @@ class ClientHandler(threading.Thread):
                     try:    
                         self.alive = 0
                         self.conn.close()
+                        print(f"Conexão perdida com o cliente {self.client_Ip}")
                         break
                     except:
-                        print("Conexão perdida com um usuário\n")
-                        break          
+                        print("Não foi possivel fechar conexão\n")
+                        break
+
+            except OSError as e:
+                if e.errno == 10054:  # WinError 10054
+                    print(f"Conexão foi fechada forçadamente pelo cliente: {self.client_Ip}")
+                    break
+                else:
+                    print(f"O cliente {self.client_Ip} causou o erro: {e} ")  
+                    break   
 
 def receive_connection(port):
+    print("threads ativas:", threading.active_count())
     connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     connection_socket.bind(('0.0.0.0', port))
     connection_socket.listen(20)
@@ -99,56 +104,53 @@ def send_data(conn, arr):
     arr = str(arr).strip("[]")
     global Receive, Send
     try:
-        if Send == 1:
-            if len(arr) == 10:
-                arr = str(arr).strip("[]")
-                arr = arr.split(',')
-            else:
+        
+        if Send == 0:
+            with lock:
+                Send = 1
+                if len(arr) == 10:
+                    arr = arr.split(',')
+            
                 conn.send(arr.encode('utf-8'))
                 print(f"\nDados Enviados: \n{arr}")
-                try:
-                    ack_data = conn.recv(1024)
-                except Exception as e:
-                    print(f"Erro de conexão{e}")
-        with lock:
-            Send = 0
-            Receive = 0
+                Send = 0
     except(ConnectionResetError, BrokenPipeError):
          print("ERRO: Conexão perdida. Impossível enviar...")
          
     
 
-def send_numbers(conn, array):
-    global Receive, Send
-    if Send == 1:
-        array = str(array).strip("[]")
-        numbers_list = array.split(',')
-        if len(numbers_list) != 10:
-            Send = 0
-            Receive = 1
-            return
+#def send_numbers(conn, array):
+#    global Receive, Send
+#    if Send == 1:
+#        array = str(array).strip("[]")
+#        numbers_list = array.split(',')
+#        if len(numbers_list) != 10:
+#            Send = 0
+#            Receive = 1
+#            return
+#        try:
+#            conn.send(array.encode('utf-8'))
+#            print(f"\nSent phrase: \n{array}")
+#            
+#        except(ConnectionResetError, BrokenPipeError):
+#            print("ERRO: Conexão perdida. Impossível enviar...")
+#           conn.close()
+#        
+#        finally:
+#            Send = 0
 
-        try:
-            conn.send(array.encode('utf-8'))
-            print(f"\nSent phrase: \n{array}")
-            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
-        except(ConnectionResetError, BrokenPipeError):
-            print("ERRO: Conexão perdida. Impossível enviar...")
-            conn.close()
-        Send = 0
-
-def send_phrase(conn, array):
-    global Receive, Send
-    
-    if Send == 1:
-        try:
-            conn.send(array.encode('utf-8'))
-            print(f"\nSent phrase: \n{array}")
-            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
-        except(ConnectionResetError, BrokenPipeError):
-            print("ERRO: Conexão perdida. Impossível enviar...")
-            conn.close()
-        Send = 0
+#def send_phrase(conn, array):
+#    global Receive, Send
+#   
+#    if Send == 1:
+#        try:
+#            conn.send(array.encode('utf-8'))
+#            print(f"\nSent phrase: \n{array}")
+#            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
+#        except(ConnectionResetError, BrokenPipeError):
+#            print("ERRO: Conexão perdida. Impossível enviar...")
+#            conn.close()
+#        Send = 0
 
 #FODASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 #Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar, conseguimos. Espero q essa função queime no inferno
@@ -401,7 +403,7 @@ if __name__ == "__main__":
                     case 0: # Criar Mesa
                         if sender == 0:
                             checkTable(table_id)
-                            Send = 1
+                            
                             send_thread = threading.Thread(target=send_data, args=(conn, "Mesa criada com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
@@ -425,7 +427,6 @@ if __name__ == "__main__":
                                     json.dump(json_str, json_file, indent=4)
                                 character_sheet_instance.logging(txt_path)
 
-                                Send = 1
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha criada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
@@ -439,7 +440,6 @@ if __name__ == "__main__":
                             if searchTable(table_id):
                                 shutil.rmtree(table_path)
 
-                                Send = 1
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Mesa deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
@@ -450,7 +450,6 @@ if __name__ == "__main__":
                                 os.remove(txt_path)
                                 os.remove(json_path)
 
-                                Send = 1
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
@@ -468,25 +467,26 @@ if __name__ == "__main__":
                                 for file in files:
                                     shutil.move(file, table_path_sent_to)
 
-                            Send = 1
                             send_thread = threading.Thread(target=send_data, args=(conn, "Ficha movida com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
 
                     case 5: # Identificar Usuário
-                        print("Identificação")
-                        mesa_max = checkExistingTables()
-                        sheet_max = checkExistingSheets(table_id)
-                        idn = identify(ip)
+                        if sender == 0:
+                            print("Identificação")
+                            mesa_max = checkExistingTables()
+                            sheet_max = checkExistingSheets(table_id)
+                            idn = identify(ip)
 
-                        Send = 1
-                        send_thread = threading.Thread(target=send_data, args=(conn, "Identificação feita com sucesso"))
-                        send_thread.daemon = True
-                        send_thread.start()
-                        
-                        send_thread2 = threading.Thread(target=send_data, args=(conn, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
-                        send_thread2.daemon = True
-                        send_thread2.start()
+
+                            send_thread = threading.Thread(target=send_data, args=(conn, "Identificação feita com sucesso"))
+                            send_thread.daemon = True
+                            send_thread.start()
+
+                            send_thread2 = threading.Thread(target=send_data, args=(conn, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
+                            send_thread2.daemon = True
+                            send_thread2.start()
+
 
                     case 6: # Modificar atributo
                         if sender == 0:
@@ -522,7 +522,6 @@ if __name__ == "__main__":
                                     json.dump(json_str, json_file, indent=4)
                                 character_sheet_instance.logging(txt_path)
                                 
-                                Send = 1
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha atualizada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
@@ -555,7 +554,7 @@ if __name__ == "__main__":
                                 with open(json_path, "r") as json_file:
                                     sheet_data = json.load(json_file)
 
-                                Send = 1
+
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Equipamento criado com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
@@ -580,7 +579,7 @@ if __name__ == "__main__":
                                                 sheet_data = json.load(json_file)
                                             character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
                                             character_sheet_instance.dance(character_sheet_instance2)
-                                            Send= 1
+
                                             send_thread = threading.Thread(target=send_data, args=(conn, "Dancou com ", character_sheet_instance2.nome()))
                                             send_thread.daemon = True
                                             send_thread.start()
@@ -596,7 +595,7 @@ if __name__ == "__main__":
                                                 sheet_data = json.load(json_file)
                                             character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
                                             character_sheet_instance.punch(character_sheet_instance2,values[2])
-                                            Send= 1
+
                                             send_thread = threading.Thread(target=send_data, args=(conn, "Você socou", character_sheet_instance2.nome()))
                                             send_thread.daemon = True
                                             send_thread.start()  
@@ -613,7 +612,7 @@ if __name__ == "__main__":
                                             
                                             character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
                                             character_sheet_instance.wink(character_sheet_instance2)
-                                            Send= 1
+
                                             send_thread = threading.Thread(target=send_data, args=(conn, "Piscou para", character_sheet_instance2.nome()))
                                             send_thread.daemon = True
                                             send_thread.start()      
@@ -629,7 +628,7 @@ if __name__ == "__main__":
                                                 sheet_data = json.load(json_file)
                                             character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
                                             character_sheet_instance.send(character_sheet_instance2,values[2], values[3])
-                                            Send= 1
+
                                             send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.nome()))
                                             send_thread.daemon = True
                                             send_thread.start() 
@@ -643,27 +642,24 @@ if __name__ == "__main__":
                                 with open(json_path, "r") as json_file:
                                     sheet_data = json.load(json_file)
                                 character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                Send= 1
+
                                 send_thread = threading.Thread(target=send_data, args=(conn,  character_sheet_instance.DisplayString()))
                                 send_thread.daemon = True
                                 send_thread.start()
                             else:
-                                Send= 1
+
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha não encontrada"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
                     case 14: # Display fichas de uma mesa
                         sheet_max = checkExistingSheets(table_id)
-                        Send= 1
+
                         send_thread = threading.Thread(target=send_data, args=(conn, sheet_max))
                         send_thread.daemon = True
                         send_thread.start()
                     
                 Ready = 1
-                #send_thread = threading.Thread(target=send_data, args=(conn, "Ficha criada com sucesso"))
-                #send_thread.daemon = True
-                #send_thread.start()
 
         with lock:
             if Ready == 1:
