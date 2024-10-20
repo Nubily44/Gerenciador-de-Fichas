@@ -46,6 +46,7 @@ class ClientHandler(threading.Thread):
 
 
     def run(self):
+        
         while True:
             try:
                 data = self.conn.recv(1024).decode('utf-8')
@@ -103,6 +104,7 @@ def send_data(conn, arr):
     
     arr = str(arr).strip("[]")
     global Receive, Send
+
     try:
         
         if Send == 0:
@@ -186,17 +188,14 @@ def identify(ip):
         return idn
 
 def searchTable(i):
-    for x in range(i):
-        if i<10:
-            folder_name = f"table0{i}"
-        else:
-            folder_name = f"table{i}"
-        full_path = os.path.join("serverside", "tables", folder_name)
-        if os.path.exists(full_path) and os.path.isdir(full_path):
-            return True
-        else:
-            return False
-    return -1
+    if i<10:
+        folder_name = f"table0{i}"
+    else:
+        folder_name = f"table{i}"
+    full_path = os.path.join("serverside", "tables", folder_name)
+    if os.path.exists(full_path) and os.path.isdir(full_path):
+        return True
+    return False
         
 def checkTable(i):
     if searchTable(i):
@@ -216,36 +215,46 @@ def checkExistingTables():
     for i in range(100):
         if searchTable(i):
             max = i
-        else:
-            break
     return max
 
-def searchSheet(i, table):
-    for x in range(i):
-        if i<10:
-            file_name = f"sheet0{i}"
-        else:
-            file_name = f"sheet{i}"
-        full_path = os.path.join("serverside","tables",f"table0{str(table)}", file_name)
-        if os.path.exists(full_path) and os.path.isfile(full_path):
-            return True
-        else:
-            return False
-
+def searchSheet(x, table):
+    # Construct file name based on x
+    if x < 10:
+        file_name = f"sheet0{x}.txt"
+    else:
+        file_name = f"sheet{x}.txt"
+    
+    # Construct full path
+    full_path = os.path.join("serverside", "tables", f"table0{str(table)}", file_name)
+    
+    # Check if the file exists
+    if os.path.exists(full_path) and os.path.isfile(full_path):
+        return True
+    return False
+        
 def checkExistingSheets(i):
-    max = 0
-    for x in range(i):
-        if i<10:
-            folder_name = f"table0{i}"
+    max_sheet = 0
+    # Loop over tables, using 'x' to represent each table
+    for x in range(i+1):
+        # Construct folder name for the table
+        if x < 10:
+            folder_name = f"table0{x}"
         else:
-            folder_name = f"table{i}"
+            folder_name = f"table{x}"
+        
+        # Construct full path for the folder
         full_path = os.path.join("serverside", "tables", folder_name)
-        for y in range(100):
-            if searchSheet(y, i):
-                max = y
-            else:
-                break
-    return max
+        print("Antes de dar merda: ", searchTable(x))
+        print("Full path: ", full_path)
+        # Check if the folder exists before searching sheets
+        if os.path.exists(full_path) and os.path.isdir(full_path):
+            print("Achou mesa: ", x)
+            # Check for sheet files in this table folder
+            for y in range(100):
+                if searchSheet(y, x):
+                    print("Existe ficha: ", y)  # Search in table `x`
+                    max_sheet = y  # Update max sheet if found
+    return max_sheet
 
 def checkSheet(i, table):
     if searchSheet(i, table):
@@ -358,7 +367,7 @@ if __name__ == "__main__":
                 message = tempMessage
                 tempMessage = []
                 ip = tempIp
-                print("ip", ip)
+                print("ip da mensagem", ip)
 
                 tempIp = []
 
@@ -475,7 +484,6 @@ if __name__ == "__main__":
                         if sender == 0:
                             print("Identificação")
                             mesa_max = checkExistingTables()
-                            sheet_max = checkExistingSheets(table_id)
                             idn = identify(ip)
 
 
@@ -483,7 +491,7 @@ if __name__ == "__main__":
                             send_thread.daemon = True
                             send_thread.start()
 
-                            send_thread2 = threading.Thread(target=send_data, args=(conn, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
+                            send_thread2 = threading.Thread(target=send_data, args=(conn, [1, idn, mesa_max, -1, 5, -1, -1, -1, -1, -1]))
                             send_thread2.daemon = True
                             send_thread2.start()
 
@@ -653,8 +661,10 @@ if __name__ == "__main__":
                                 send_thread.start()
 
                     case 14: # Display fichas de uma mesa
+                        #teste = searchSheet(1, 1)
+                        #print(teste)
                         sheet_max = checkExistingSheets(table_id)
-
+                        print(checkTable(table_id))
                         send_thread = threading.Thread(target=send_data, args=(conn, f"Existem {sheet_max} fichas na mesa {table_id}"))
                         send_thread.daemon = True
                         send_thread.start()
