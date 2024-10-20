@@ -8,6 +8,7 @@ import random
 import json
 import shutil
 import glob
+import time
 
 # Add the src folder to the system path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -27,76 +28,126 @@ Ready = 0
 
 tempMessage = []
 tempIp = []
-tempIp2 = []
+conn = None
 
 lock = threading.Lock()
 
+
+
 class ClientHandler(threading.Thread):
-    def __init__(self, conn, addr):
+    def __init__(self, conn, addr, timeout):
         super().__init__()
         self.conn = conn
         self.addr = addr
         self.client_Ip = addr[0]
+        self.alive = 1
+        self.lock = threading.Lock()
+        self.lastTime = time.time()
+        self.conn.settimeout(timeout)
+
 
     def run(self):
-        data = self.conn.recv(1024)
-        if data:
-            received_data = data.decode().split(',')
-            print(f"Received data: \n{received_data}")
-            global tempMessage, Receive, tempIp, tempIp2
-            with lock:
-                tempMessage = received_data
-                Receive = 1
-                tempIp2 = self.client_Ip  # Store client IP address
-                tempIp = list(map(int, self.client_Ip.split('.')))  # Store as integers
-            ack_message = "data received"
-            self.conn.send(ack_message.encode('utf-8'))
-        self.conn.close()
+        while True:
+            try:
+                data = self.conn.recv(1024).decode('utf-8')
+                received_data = data.split(',')
+                print(f"\nDados recebidos: \n{received_data}")
+                if received_data and len(received_data) == 10:
 
-def receive_data(port):
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('0.0.0.0', port))
-    server_socket.listen(20)
+                    global tempMessage, tempIp, Receive, Send, conn
+                    with lock:
+                        Receive = 1
+                        tempMessage = received_data
+                        tempIp = self.client_Ip
+                        conn = self.conn
+                        
+                    ack_message = "data received"
+                    received_data = []
+                    self.conn.send(ack_message.encode('utf-8'))
+
+                if len(received_data) == 2 and int(received_data[0].strip("[]")) == 1:
+                    self.lastTime = time.time()
+
+
+            except socket.timeout:
+                if time.time() - self.lastTime > 60:  
+                    try:    
+                        self.alive = 0
+                        self.conn.close()
+                        break
+                    except:
+                        print("Conexão perdida com um usuário\n")
+                        break          
+
+def receive_connection(port):
+    connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    connection_socket.bind(('0.0.0.0', port))
+    connection_socket.listen(20)
 
     while True:
-        conn, addr = server_socket.accept()
-        client_handler = ClientHandler(conn, addr)
-        client_handler.start()
+        try:
+            conn, addr = connection_socket.accept()
+            client_handler = ClientHandler(conn, addr, 60)
+            client_handler.start()
 
-def send_numbers(ip, port, array):
-    global receive, Send
+        except:
+            print("ERRO: Não aceitou a conexão")
+            break
+
+def send_data(conn, arr):
     
+    arr = str(arr).strip("[]")
+    global Receive, Send
+    try:
+        if Send == 1:
+            if len(arr) == 10:
+                arr = str(arr).strip("[]")
+                arr = arr.split(',')
+            else:
+                conn.send(arr.encode('utf-8'))
+                print(f"\nDados Enviados: \n{arr}")
+                try:
+                    ack_data = conn.recv(1024)
+                except Exception as e:
+                    print(f"Erro de conexão{e}")
+        with lock:
+            Send = 0
+            Receive = 0
+    except(ConnectionResetError, BrokenPipeError):
+         print("ERRO: Conexão perdida. Impossível enviar...")
+         
+    
+
+def send_numbers(conn, array):
+    global Receive, Send
     if Send == 1:
         array = str(array).strip("[]")
         numbers_list = array.split(',')
         if len(numbers_list) != 10:
             Send = 0
-            receive = 1
+            Receive = 1
             return
 
-        send_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            send_socket.connect((ip, port))
-            send_socket.send(array.encode('utf-8'))
-            print(f"\nSent numbers: \n{array}")
-            ack_data = send_socket.recv(1024)
-            
-        finally:
-            send_socket.close()
+            conn.send(array.encode('utf-8'))
+            print(f"\nSent phrase: \n{array}")
+            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
+        except(ConnectionResetError, BrokenPipeError):
+            print("ERRO: Conexão perdida. Impossível enviar...")
+            conn.close()
         Send = 0
 
-def send_phrase(ip, port, array):
-    global receive, Send
+def send_phrase(conn, array):
+    global Receive, Send
     
     if Send == 1:
-        send_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            send_socket.connect((ip, port))
-            send_socket.send(array.encode('utf-8'))
+            conn.send(array.encode('utf-8'))
             print(f"\nSent phrase: \n{array}")
-            ack_data = send_socket.recv(1024)
-        finally:
-            send_socket.close()
+            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
+        except(ConnectionResetError, BrokenPipeError):
+            print("ERRO: Conexão perdida. Impossível enviar...")
+            conn.close()
         Send = 0
 
 #FODASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
@@ -118,7 +169,7 @@ def identify(ip):
     if ip in df["Ip"].astype(str).values:  
         print(f"IP existente: {ip}")
         match = df[df["Ip"] == ip]
-        return match["Id"].values[0]
+        return int(match["Id"].values[0])
     else:
         
         idn = random.randint(10000, 99999)
@@ -167,7 +218,6 @@ def checkExistingTables():
             break
     return max
 
-
 def searchSheet(i, table):
     for x in range(i):
         if i<10:
@@ -213,6 +263,7 @@ def checkSheet(i, table):
             pass
 
 
+{ #Comentários
 # Testes
 # character_sheet = Sheet_Template("Aragorn", 20, 15, 90)
 # character_sheet2 = Sheet_Template("Legolas", 15, 20, 10)
@@ -270,7 +321,7 @@ def checkSheet(i, table):
 #   12 = Modificar Equipamento              ["nome", -1, -1, -1, -1]     nome = nome do equipamento
 #c   13 = Display Ficha                      [-1, -1, -1, -1, -1]
 #c   14 =  Display fichas de uma mesa       [-1, -1, -1, -1, -1]
-#   // = help
+#   -1 = sair e desconectar
 
 #   [5]  Sexto Número: Valor 1
 
@@ -282,19 +333,20 @@ def checkSheet(i, table):
 
 #   [9]  Décimo Número: Valor 5
 
-
+}
 
 if __name__ == "__main__":
     PORT = 5000  # You can adjust this port # Our IP address
 
     # Start the receiver thread
-    receive_thread = threading.Thread(target=receive_data, args=(PORT,))
+    receive_thread = threading.Thread(target=receive_connection, args=(PORT,))
     receive_thread.daemon = True  # This allows the thread to exit when the main program exits
     receive_thread.start()
 
     print("Server started. Listening for incoming connections...")
 
     # Main traffic light loop
+    timeinicial = time.time()
     while True:
         with lock:
             if Receive == 1 and Ready == 0:
@@ -303,12 +355,10 @@ if __name__ == "__main__":
 
                 message = tempMessage
                 tempMessage = []
-                ip = tempIp2
-                reg = tempIp
+                ip = tempIp
                 print("ip", ip)
 
                 tempIp = []
-                tempIp2 = []
 
                 sender = int(message[0])
                 idn = int(message[1])
@@ -343,36 +393,44 @@ if __name__ == "__main__":
                     table_path = (os.path.join("serverside","tables",f"table{str(table_id)}"))
 
                 match message_type:
+                    case -1:
+                        if sender == 0:
+                            conn.close()
+                            print(ip,"des'conn'ectou")
+
                     case 0: # Criar Mesa
                         if sender == 0:
                             checkTable(table_id)
                             Send = 1
-                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Mesa criada com sucesso"))
+                            send_thread = threading.Thread(target=send_data, args=(conn, "Mesa criada com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
                         else:
                             pass
+                    
                     case 1: # Criar Ficha
                         if sender == 0:
                             checkTable(table_id)
                             if searchTable(table_id):
                                 checkSheet(sheet_id, table_id)
+
                                 for i in range(3):
                                     values[i+1] = int(values[i+1])
                                     print(values[i+1])
                                 values[0] = str(values[0])
-                                print(values[0])
+
                                 character_sheet_instance = Sheet_Template(values[0], values[1], values[2], values[3])
                                 json_str = character_sheet_instance.to_dict()
                                 with open(json_path, "w") as json_file:
                                     json.dump(json_str, json_file, indent=4)
                                 character_sheet_instance.logging(txt_path)
+
                                 Send = 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha criada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Ficha criada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
-                                print(character_sheet_instance.DisplayString())
-                                send_thread2 = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+
+                                send_thread2 = threading.Thread(target=send_data, args=(conn, character_sheet_instance.DisplayString()))
                                 send_thread2.daemon = True
                                 send_thread2.start()
 
@@ -380,8 +438,9 @@ if __name__ == "__main__":
                         if sender == 0:
                             if searchTable(table_id):
                                 shutil.rmtree(table_path)
+
                                 Send = 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Mesa deletada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Mesa deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
                     
@@ -390,14 +449,15 @@ if __name__ == "__main__":
                             if searchSheet(sheet_id, table_id):
                                 os.remove(txt_path)
                                 os.remove(json_path)
+
                                 Send = 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha deletada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Ficha deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
                     case 4: # Mudar Ficha de posição
                         if sender == 0:
-
+                            values[0] = int (values[0])
                             table_path_sent_to = os.path.join("serverside","tables",f"table{str(values[0])}")
 
                             if not os.path.exists(table_path_sent_to):
@@ -409,28 +469,32 @@ if __name__ == "__main__":
                                     shutil.move(file, table_path_sent_to)
 
                             Send = 1
-                            send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha movida com sucesso"))
+                            send_thread = threading.Thread(target=send_data, args=(conn, "Ficha movida com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
-
 
                     case 5: # Identificar Usuário
                         print("Identificação")
                         mesa_max = checkExistingTables()
                         sheet_max = checkExistingSheets(table_id)
                         idn = identify(ip)
+
                         Send = 1
-                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Identificação feita com sucesso"))
+                        send_thread = threading.Thread(target=send_data, args=(conn, "Identificação feita com sucesso"))
                         send_thread.daemon = True
                         send_thread.start()
                         
-                        send_thread = threading.Thread(target=send_numbers, args=(ip, PORT, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
-                        send_thread.daemon = True
-                        send_thread.start()
+                        send_thread2 = threading.Thread(target=send_data, args=(conn, [1, idn, mesa_max, sheet_max, 5, -1, -1, -1, -1, -1]))
+                        send_thread2.daemon = True
+                        send_thread2.start()
 
                     case 6: # Modificar atributo
                         if sender == 0:
                             if searchSheet(sheet_id, table_id):
+                                
+                                for(i) in range(3):
+                                    values[i] = int(values[i])
+
                                 with open(json_path, "r") as json_file:
                                     data = json.load(json_file)
                                 sheet_object = Sheet_Template.from_dict(data)
@@ -459,17 +523,21 @@ if __name__ == "__main__":
                                 character_sheet_instance.logging(txt_path)
                                 
                                 Send = 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha atualizada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Ficha atualizada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
                                 print(character_sheet_instance.DisplayString())
-                                send_thread2 = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                                send_thread2 = threading.Thread(target=send_data, args=(conn, character_sheet_instance.DisplayString()))
                                 send_thread2.daemon = True
                                 send_thread2.start()
 
                     case 7: # Criar Equipamento
                         if sender == 0:
                             if searchSheet(sheet_id, table_id):
+
+                                for i in range(3):
+                                    values[i] = int(values[i])
+                                
                                 if table_id<10:
                                     equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
                                 else:
@@ -488,80 +556,83 @@ if __name__ == "__main__":
                                     sheet_data = json.load(json_file)
 
                                 Send = 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Equipamento criado com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Equipamento criado com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
                     case 8: #Modificar ficha (mochilas e ações)
-                        print("teste")
+                        pass
                         
                     case 9: #Acões
-                        match values[0]:
-                            case 0:
-                                if searchSheet(sheet_id, table_id):
-                                    other_id = values[1]
-                                    with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                    if searchSheet(other_id, table_id):
-                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                        if sender == 0:
+                            for i in range(3):
+                                values[i] = int(values[i])
+                            match values[0]:
+                                case 0:
+                                    if searchSheet(sheet_id, table_id):
+                                        other_id = values[1]
                                         with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        character_sheet_instance.dance(character_sheet_instance2)
-                                        Send= 1
-                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Dancou com ", character_sheet_instance2.nome()))
-                                        send_thread.daemon = True
-                                        send_thread.start()
-                            case 1:
-                                if searchSheet(sheet_id, table_id):
-                                    other_id = values[1]
-                                    with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                    if searchSheet(other_id, table_id):
-                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                                sheet_data = json.load(json_file)
+                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        if searchSheet(other_id, table_id):
+                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                            with open(json_path, "r") as json_file:
+                                                sheet_data = json.load(json_file)
+                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                            character_sheet_instance.dance(character_sheet_instance2)
+                                            Send= 1
+                                            send_thread = threading.Thread(target=send_data, args=(conn, "Dancou com ", character_sheet_instance2.nome()))
+                                            send_thread.daemon = True
+                                            send_thread.start()
+                                case 1:
+                                    if searchSheet(sheet_id, table_id):
+                                        other_id = values[1]
                                         with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        character_sheet_instance.punch(character_sheet_instance2,values[2])
-                                        Send= 1
-                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Você socou", character_sheet_instance2.nome()))
-                                        send_thread.daemon = True
-                                        send_thread.start()  
-                            case 2:
-                                if searchSheet(sheet_id, table_id):
-                                    other_id = values[1]
-                                    with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                    if searchSheet(other_id, table_id):
-                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                                sheet_data = json.load(json_file)
+                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        if searchSheet(other_id, table_id):
+                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                            with open(json_path, "r") as json_file:
+                                                sheet_data = json.load(json_file)
+                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                            character_sheet_instance.punch(character_sheet_instance2,values[2])
+                                            Send= 1
+                                            send_thread = threading.Thread(target=send_data, args=(conn, "Você socou", character_sheet_instance2.nome()))
+                                            send_thread.daemon = True
+                                            send_thread.start()  
+                                case 2:
+                                    if searchSheet(sheet_id, table_id):
+                                        other_id = values[1]
                                         with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                        
-                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        character_sheet_instance.wink(character_sheet_instance2)
-                                        Send= 1
-                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Piscou para", character_sheet_instance2.nome()))
-                                        send_thread.daemon = True
-                                        send_thread.start()      
-                            case 3:
-                                if searchSheet(sheet_id, table_id):
-                                    other_id = values[1]
-                                    with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                    character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                    if searchSheet(other_id, table_id):
-                                        json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                                sheet_data = json.load(json_file)
+                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        if searchSheet(other_id, table_id):
+                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                            with open(json_path, "r") as json_file:
+                                                sheet_data = json.load(json_file)
+                                            
+                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                            character_sheet_instance.wink(character_sheet_instance2)
+                                            Send= 1
+                                            send_thread = threading.Thread(target=send_data, args=(conn, "Piscou para", character_sheet_instance2.nome()))
+                                            send_thread.daemon = True
+                                            send_thread.start()      
+                                case 3:
+                                    if searchSheet(sheet_id, table_id):
+                                        other_id = values[1]
                                         with open(json_path, "r") as json_file:
-                                            sheet_data = json.load(json_file)
-                                        character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        character_sheet_instance.send(character_sheet_instance2,values[2], values[3])
-                                        Send= 1
-                                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.nome()))
-                                        send_thread.daemon = True
-                                        send_thread.start() 
+                                                sheet_data = json.load(json_file)
+                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                        if searchSheet(other_id, table_id):
+                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
+                                            with open(json_path, "r") as json_file:
+                                                sheet_data = json.load(json_file)
+                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                            character_sheet_instance.send(character_sheet_instance2,values[2], values[3])
+                                            Send= 1
+                                            send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.nome()))
+                                            send_thread.daemon = True
+                                            send_thread.start() 
 
                     case 13: # Display Ficha
                         print("Existencia da mesa")
@@ -573,30 +644,28 @@ if __name__ == "__main__":
                                     sheet_data = json.load(json_file)
                                 character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
                                 Send= 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, character_sheet_instance.DisplayString()))
+                                send_thread = threading.Thread(target=send_data, args=(conn,  character_sheet_instance.DisplayString()))
                                 send_thread.daemon = True
                                 send_thread.start()
                             else:
                                 Send= 1
-                                send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha não encontrada"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, "Ficha não encontrada"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
-                    
                     case 14: # Display fichas de uma mesa
                         sheet_max = checkExistingSheets(table_id)
                         Send= 1
-                        send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, sheet_max))
+                        send_thread = threading.Thread(target=send_data, args=(conn, sheet_max))
                         send_thread.daemon = True
                         send_thread.start()
                     
                 Ready = 1
-                #send_thread = threading.Thread(target=send_phrase, args=(ip, PORT, "Ficha criada com sucesso"))
+                #send_thread = threading.Thread(target=send_data, args=(conn, "Ficha criada com sucesso"))
                 #send_thread.daemon = True
                 #send_thread.start()
 
         with lock:
-            
             if Ready == 1:
                 Receive = 0
                 Ready = 0   
