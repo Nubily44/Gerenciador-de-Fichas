@@ -655,7 +655,6 @@ if __name__ == "__main__":
                     case 14: # Display fichas de uma mesa
                         sheet_max = checkExistingSheets(table_id)
 
-                        send_thread = threading.Thread(target=send_data, args=(conn, sheet_max))
                         send_thread = threading.Thread(target=send_data, args=(conn, f"Existem {sheet_max} fichas na mesa {table_id}"))
                         send_thread.daemon = True
                         send_thread.start()
