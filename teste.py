@@ -44,7 +44,7 @@ def send_number(ip, port):
 
 if __name__ == "__main__":
     PORT = 5000  # You can adjust this port
-    FRIEND_IP = '26.204.92.82'  # Change to your friend's IP if needed
+    FRIEND_IP = '26.75.237.136'  # Change to your friend's IP if needed
 
     # Start the receiver thread
     receive_thread = threading.Thread(target=receive_numbers, args=(PORT,))
