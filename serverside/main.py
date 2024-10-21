@@ -10,10 +10,14 @@ import shutil
 import glob
 import time
 
-# Add the src folder to the system path
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------0
+# se você vê o 0 no final dessa linha, o tamanho da letra está +- adequado para ler esse código
+
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from sheet_template  import Sheet_Template  # Import the class
+from sheet_template  import Sheet_Template
 from equipment_template import (
     Weapon_Template,
     Usable_Template,
@@ -33,7 +37,7 @@ conn = None
 lock = threading.Lock()
 
 
-
+# Client Handler: objeto que armazena o socket da conexão e o endereço do cliente, e recebe os dados enviados pelo cliente
 class ClientHandler(threading.Thread):
     def __init__(self, conn, addr, timeout):
         super().__init__()
@@ -84,6 +88,8 @@ class ClientHandler(threading.Thread):
                     print(f"O cliente {self.client_Ip} causou o erro: {e} ")  
                     break   
 
+
+# socket que recebe conexões, "Welcome Socket" do TCP
 def receive_connection(port):
     print("threads ativas:", threading.active_count())
     connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -100,11 +106,12 @@ def receive_connection(port):
             print("ERRO: Não aceitou a conexão")
             break
 
+
+# Função que envia dados para o cliente
 def send_data(conn, arr):
     
     arr = str(arr).strip("[]")
     global Receive, Send
-
     try:
         
         if Send == 0:
@@ -119,43 +126,9 @@ def send_data(conn, arr):
     except(ConnectionResetError, BrokenPipeError):
          print("ERRO: Conexão perdida. Impossível enviar...")
          
-    
-
-#def send_numbers(conn, array):
-#    global Receive, Send
-#    if Send == 1:
-#        array = str(array).strip("[]")
-#        numbers_list = array.split(',')
-#        if len(numbers_list) != 10:
-#            Send = 0
-#            Receive = 1
-#            return
-#        try:
-#            conn.send(array.encode('utf-8'))
-#            print(f"\nSent phrase: \n{array}")
-#            
-#        except(ConnectionResetError, BrokenPipeError):
-#            print("ERRO: Conexão perdida. Impossível enviar...")
-#           conn.close()
-#        
-#        finally:
-#            Send = 0
-
-#def send_phrase(conn, array):
-#    global Receive, Send
-#   
-#    if Send == 1:
-#        try:
-#            conn.send(array.encode('utf-8'))
-#            print(f"\nSent phrase: \n{array}")
-#            ack_data = conn.recv(1024) #pode ser usado para mostrar que recebeu
-#        except(ConnectionResetError, BrokenPipeError):
-#            print("ERRO: Conexão perdida. Impossível enviar...")
-#            conn.close()
-#        Send = 0
 
 #FODASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-#Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar, conseguimos. Espero q essa função queime no inferno
+#Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar (identify), conseguimos. Espero q essa função queime no inferno. Adiquirimos ódio pelo pandas e por ela
 
 def identify(ip):
     path = os.path.join("serverside", "idns.csv")
@@ -186,6 +159,8 @@ def identify(ip):
         print(f"Novo IP adicionado: {ip}, ID: {idn}")
 
         return idn
+
+# Funções para fazer o gerenciamento das fichas e mesas
 
 def searchTable(i):
     if i<10:
@@ -218,16 +193,14 @@ def checkExistingTables():
     return max
 
 def searchSheet(x, table):
-    # Construct file name based on x
     if x < 10:
         file_name = f"sheet0{x}.txt"
     else:
         file_name = f"sheet{x}.txt"
     
-    # Construct full path
     full_path = os.path.join("serverside", "tables", f"table0{str(table)}", file_name)
     
-    # Check if the file exists
+
     if os.path.exists(full_path) and os.path.isfile(full_path):
         return True
     return False
@@ -244,15 +217,15 @@ def checkExistingSheets(i):
         
         # Construct full path for the folder
         full_path = os.path.join("serverside", "tables", folder_name)
-        print("Antes de dar merda: ", searchTable(x))
-        print("Full path: ", full_path)
+        #print("Antes de dar merda: ", searchTable(x))
+        #print("Full path: ", full_path)
         # Check if the folder exists before searching sheets
         if os.path.exists(full_path) and os.path.isdir(full_path):
-            print("Achou mesa: ", x)
+            #print("Achou mesa: ", x)
             # Check for sheet files in this table folder
             for y in range(100):
                 if searchSheet(y, x):
-                    print("Existe ficha: ", y)  # Search in table `x`
+                    #print("Existe ficha: ", y)  # Search in table `x`
                     max_sheet = y  # Update max sheet if found
     return max_sheet
 
@@ -272,6 +245,27 @@ def checkSheet(i, table):
             full_path = os.path.join("serverside","tables",f"table{str(table)}", file_name)
         with open(full_path, "w"):
             pass
+
+def searchEquipment(table):
+    if table<10:
+        equipment_path = os.path.join("serverside","tables",f"table0{str(table)}", "equipment")
+    else:
+        equipment_path = os.path.join("serverside","tables",f"table{str(table)}", "equipment")
+    if os.path.exists(equipment_path) and os.path.isdir(equipment_path):
+        return True
+    return False
+
+def checkEquipment(table):
+    if searchEquipment(table):
+        print("Pasta Encontrada")
+        return True
+    else:
+        print("Criando Pasta")
+        if table<10:
+            equipment_path = os.path.join("serverside","tables",f"table0{str(table)}", "equipment")
+        else:
+            equipment_path = os.path.join("serverside","tables",f"table{str(table)}", "equipment")
+        os.mkdir(equipment_path)
 
 
 { #Comentários
@@ -377,37 +371,37 @@ if __name__ == "__main__":
                 sheet_id = int(message[3])
                 message_type = int(message[4])
                 values = [None] * 5
-                for i in range(4):
+                for i in range(5):
                     values[i] = message[5+i]
-                if table_id<10:
-                    txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
-                    if sheet_id<10:
-                        txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
-                else:
-                    txt_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
-                
-                if table_id<10:
-                    json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.json")
-                    if sheet_id<10:
-                        json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.json")
-                else:
-                    json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
+
+
 
                 if table_id<10:
-                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
-                else:
-                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
 
-                if table_id<10:
                     table_path = os.path.join("serverside","tables",f"table0{str(table_id)}")
+                    txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.json")
+                    equipment_path = os.path.join("serverside","tables",f"table0{str(table_id)}", "equipment", f"{values[0]}.json")
+
+                    if sheet_id<10:
+
+                        txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
+                        json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.json")
+
                 else:
+
+                    txt_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
+                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
                     table_path = (os.path.join("serverside","tables",f"table{str(table_id)}"))
+                
+
+                    
 
                 match message_type:
                     case -1:
                         if sender == 0:
                             conn.close()
-                            print(ip,"des'conn'ectou")
 
                     case 0: # Criar Mesa
                         if sender == 0:
@@ -466,7 +460,10 @@ if __name__ == "__main__":
                     case 4: # Mudar Ficha de posição
                         if sender == 0:
                             values[0] = int (values[0])
-                            table_path_sent_to = os.path.join("serverside","tables",f"table{str(values[0])}")
+                            if values[0]<10:
+                                table_path_sent_to = os.path.join("serverside","tables",f"table0{str(values[0])}")
+                            else:
+                                table_path_sent_to = os.path.join("serverside","tables",f"table{str(values[0])}")
 
                             if not os.path.exists(table_path_sent_to):
                                 checkTable(values[0])
@@ -540,32 +537,36 @@ if __name__ == "__main__":
 
                     case 7: # Criar Equipamento
                         if sender == 0:
-                            if searchSheet(sheet_id, table_id):
+                            
+                            values[4] = int(values[4])
+                            checkEquipment(table_id)
+                            if values[4] == 0:
+                                equipment_instance = Weapon_Template(values[0], values[1], values[2], values[3], 0)
+                                data = equipment_instance.to_dict()
+                                with open(equipment_path, "w") as json_file:
+                                    json.dump(data, json_file, indent=4)
 
-                                for i in range(3):
-                                    values[i] = int(values[i])
-                                
-                                if table_id<10:
-                                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
-                                else:
-                                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
-                                
-                                if values[4] == 0:
-                                    equipment_instance = Weapon_Template(values[0], values[1], values[2], values[3])
-                                if values[4] == 1:
-                                    equipment_instance = Usable_Template(values[0], values[1], values[2], values[3])
-                                if values[4] == 2:
-                                    equipment_instance = Permanent_Template(values[0], values[1], values[2], values[3])
-                                if values[4] == 3:
-                                    equipment_instance = Permanent_Buff_Template(values[0], values[1], values[2], values[3])
-                                
-                                with open(json_path, "r") as json_file:
-                                    sheet_data = json.load(json_file)
+                            if values[4] == 1:
+                                equipment_instance = Usable_Template(values[0], values[1], values[2], values[3], 0)
+                                data = equipment_instance.to_dict()
+                                with open(equipment_path, "w") as json_file:
+                                    json.dump(data, json_file, indent=4)
 
+                            if values[4] == 2:
+                                equipment_instance = Permanent_Template(values[0], values[1], values[2], values[3], 0)
+                                data = equipment_instance.to_dict()
+                                with open(equipment_path, "w") as json_file:
+                                    json.dump(data, json_file, indent=4)
 
-                                send_thread = threading.Thread(target=send_data, args=(conn, "Equipamento criado com sucesso"))
-                                send_thread.daemon = True
-                                send_thread.start()
+                            if values[4] == 3:
+                                equipment_instance = Permanent_Buff_Template(values[0], values[1], values[2], values[3], 0)
+                                data = equipment_instance.to_dict()
+                                with open(equipment_path, "w") as json_file:
+                                    json.dump(data, json_file, indent=4)
+
+                            send_thread = threading.Thread(target=send_data, args=(conn, "Equipamento criado com sucesso"))
+                            send_thread.daemon = True
+                            send_thread.start()
 
                     case 8: #Modificar ficha (mochilas e ações)
                         pass
@@ -574,72 +575,52 @@ if __name__ == "__main__":
                         if sender == 0:
                             for i in range(3):
                                 values[i] = int(values[i])
-                            match values[0]:
-                                case 0:
-                                    if searchSheet(sheet_id, table_id):
-                                        other_id = values[1]
-                                        with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        if searchSheet(other_id, table_id):
-                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
-                                            with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                            character_sheet_instance.dance(character_sheet_instance2)
+                                
+                            if searchSheet(sheet_id, table_id):
+                                    other_id = values[1]
+                            with open(json_path, "r") as json_file:
+                                    sheet_data = json.load(json_file)
+                            character_sheet_instance = Sheet_Template.from_dict(sheet_data)
+                            if searchSheet(other_id, table_id):
+                                if other_id <10:
+                                    json_path2  = os.path.join(table_path, f"sheet0{str(other_id)}.json")
+                                    text_path2  = os.path.join(table_path, f"sheet0{str(other_id)}.txt")
+                                else:
+                                    json_path2  = os.path.join(table_path, f"sheet{str(other_id)}.json")
+                                    text_path2  = os.path.join(table_path, f"sheet{str(other_id)}.txt")
+                                with open(json_path2, "r") as json_file:
+                                    sheet_data = json.load(json_file)
+                                character_sheet_instance2 = Sheet_Template.from_dict(sheet_data)
+                                match values[0]:
+                                    case 0:#Dança pros cria
+                                        send_thread = threading.Thread(target=send_data, args=(conn, f"{character_sheet_instance.getName()} dancou com {character_sheet_instance2.getName()}"))
+                                        send_thread.daemon = True
+                                        send_thread.start()
+                                    case 1:#Soca os cria
+                                        send_thread = threading.Thread(target=send_data, args=(conn, f"{character_sheet_instance.getName()} socou {character_sheet_instance2.getName()}"))
+                                        send_thread.daemon = True
+                                        send_thread.start()  
+                                    case 2:#Pisca pros cria
+                                        send_thread = threading.Thread(target=send_data, args=(conn, f"{character_sheet_instance.getName()} piscou para {character_sheet_instance2.getName()}"))
+                                        send_thread.daemon = True
+                                        send_thread.start()      
+                                    case 3: #Manda item pros cria   
+                                        character_sheet_instance.send(character_sheet_instance2, values[2], values[3])
 
-                                            send_thread = threading.Thread(target=send_data, args=(conn, "Dancou com ", character_sheet_instance2.nome()))
-                                            send_thread.daemon = True
-                                            send_thread.start()
-                                case 1:
-                                    if searchSheet(sheet_id, table_id):
-                                        other_id = values[1]
-                                        with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        if searchSheet(other_id, table_id):
-                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
-                                            with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                            character_sheet_instance.punch(character_sheet_instance2,values[2])
-
-                                            send_thread = threading.Thread(target=send_data, args=(conn, "Você socou", character_sheet_instance2.nome()))
-                                            send_thread.daemon = True
-                                            send_thread.start()  
-                                case 2:
-                                    if searchSheet(sheet_id, table_id):
-                                        other_id = values[1]
-                                        with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        if searchSheet(other_id, table_id):
-                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
-                                            with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                            
-                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                            character_sheet_instance.wink(character_sheet_instance2)
-
-                                            send_thread = threading.Thread(target=send_data, args=(conn, "Piscou para", character_sheet_instance2.nome()))
-                                            send_thread.daemon = True
-                                            send_thread.start()      
-                                case 3:
-                                    if searchSheet(sheet_id, table_id):
-                                        other_id = values[1]
-                                        with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                        character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                        if searchSheet(other_id, table_id):
-                                            json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(other_id)}.json")
-                                            with open(json_path, "r") as json_file:
-                                                sheet_data = json.load(json_file)
-                                            character_sheet_instance2 = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
-                                            character_sheet_instance.send(character_sheet_instance2,values[2], values[3])
-
-                                            send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.nome()))
-                                            send_thread.daemon = True
-                                            send_thread.start() 
+                                        data = character_sheet_instance.to_dict()
+                                        with open(json_path, "w") as json_file:
+                                            json.dump(data, json_file, indent=4)
+                                        character_sheet_instance2.logging(txt_path)
+                                        
+                                        data = character_sheet_instance2.to_dict()
+                                        with open(json_path2, "w") as json_file:
+                                            json.dump(data, json_file, indent=4)
+                                        character_sheet_instance2.logging(txt_path2)
+                                        
+                                        
+                                        send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.getName()))
+                                        send_thread.daemon = True
+                                        send_thread.start() 
 
                     case 13: # Display Ficha
                         print("Existencia da mesa")
@@ -649,20 +630,17 @@ if __name__ == "__main__":
                                 print("Existencia da ficha")
                                 with open(json_path, "r") as json_file:
                                     sheet_data = json.load(json_file)
-                                character_sheet_instance = Sheet_Template(sheet_data['value0'], sheet_data['value1'], sheet_data['value2'], sheet_data['value3'])
+                                sheet_instance = Sheet_Template.from_dict(sheet_data)
 
-                                send_thread = threading.Thread(target=send_data, args=(conn,  character_sheet_instance.DisplayString()))
+                                send_thread = threading.Thread(target=send_data, args=(conn, sheet_instance.DisplayString()))
                                 send_thread.daemon = True
                                 send_thread.start()
                             else:
-
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha não encontrada"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
                     case 14: # Display fichas de uma mesa
-                        #teste = searchSheet(1, 1)
-                        #print(teste)
                         sheet_max = checkExistingSheets(table_id)
                         print(checkTable(table_id))
                         send_thread = threading.Thread(target=send_data, args=(conn, f"Existem {sheet_max} fichas na mesa {table_id}"))

@@ -9,6 +9,23 @@ class Equipment_Template:
 
     # Dices
     
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'type': self.type,
+            'rarity': self.rarity,
+            'state': self.state
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data['name'],
+            type=data['type'],
+            rarity=data['rarity'],
+            state=data['state']
+        )
+
     def roll_Dice(self, x):
         return random.randint(1, x)
     
@@ -231,7 +248,7 @@ class Usable_Template(Equipment_Template):
 class Permanent_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state):
         super().__init__(name, type, rarity, state)
-        print("Criar o equipamento:", self.name)
+        print("Criou o equipamento:", self.name)
 
     def DisplayString(self):
         display_string = (
@@ -260,7 +277,6 @@ class Permanent_Buff_Template(Permanent_Template):
     def __init__(self, name, type, rarity, state, effect):
         super().__init__(name, type, rarity, state)
         self.effect = effect
-        print("Criou o equipamento:", self.name)
     
     def DisplayString(self):
         display_string = (
@@ -292,11 +308,11 @@ class Permanent_Buff_Template(Permanent_Template):
 
     def applyInAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() + self.effect)
-        print("Aplicou", self.effect, "em", target.nome)
+        print("Aplicou", self.effect, "em", target.name)
         
     def removeFromAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() - self.effect)
-        print("Removeu", self.effect, "de", target.nome)    
+        print("Removeu", self.effect, "de", target.name)    
     
     def getEffect(self):
         return self.effect

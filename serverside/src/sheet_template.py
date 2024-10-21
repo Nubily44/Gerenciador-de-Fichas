@@ -1,8 +1,8 @@
 import random
 
 class Sheet_Template:
-    def __init__(self, nome, AttB, AttC, AttV):
-        self.nome = nome
+    def __init__(self, name, AttB, AttC, AttV):
+        self.name = name
         self.AttB = AttB
         self.AttC = AttC
         self.AttV = AttV
@@ -33,7 +33,7 @@ class Sheet_Template:
             return min(rolls)
 
     def Display(self):
-        print("Nome: ", self.nome)
+        print("Nome: ", self.name)
         print("B: ", self.AttB)
         print("C: ", self.AttC)
         print("V: ", self.AttV)
@@ -55,7 +55,7 @@ class Sheet_Template:
     
     def DisplayString(self):
         display_string = (
-            f"Nome: {self.nome}\n"
+            f"Nome: {self.name}\n"
             f"B: {self.AttB}\n"
             f"C: {self.AttC}\n"
             f"V: {self.AttV}\n"
@@ -74,7 +74,7 @@ class Sheet_Template:
 
     def logging(self, f):
         with open(f, "w") as f:
-            f.write(f"Nome: {self.nome}\n")
+            f.write(f"Nome: {self.name}\n")
             f.write(f"B: {self.AttB}\n")
             f.write(f"C: {self.AttC}\n")
             f.write(f"V: {self.AttV}\n")
@@ -94,7 +94,7 @@ class Sheet_Template:
 
     def to_dict(self):
         return {
-            "nome": self.nome,
+            "nome": self.name,
             "AttB": self.AttB,
             "AttC": self.AttC,
             "AttV": self.AttV,
@@ -110,27 +110,39 @@ class Sheet_Template:
             ]
         }
 
-    def from_dict(cls, data, weapons_dict, usables_dict, permanents_dict):
-        sheet = cls(data['nome'], data['AttB'], data['AttC'], data['AttV'])
+    @classmethod
+    def from_dict(cls, data):
+        # Create a new instance of the class using the data dictionary
+        sheet = cls(data['name'], data['AttB'], data['AttC'], data['AttV'])
         sheet.Alive = data['Alive']
 
-        # Rebuild WeaponsBackpack, UsablesBackpack, PermanentsBackpack from dictionaries
-        sheet.WeaponsBackpack = [
-            [weapons_dict[item['weapon']], item['quantity']] for item in data['WeaponsBackpack']
-        ]
-        sheet.UsablesBackpack = [
-            [usables_dict[item['usable']], item['quantity']] for item in data['UsablesBackpack']
-        ]
-        sheet.PermanentsBackpack = [
-            [permanents_dict[item['permanent']], item['quantity']] for item in data['PermanentsBackpack']
-        ]
+        # Store the values in backpacks as attributes
+        for item in data['WeaponsBackpack']:
+            sheet.WeaponsBackpack[item['weapon']] = item['quantity']
+        
+        for item in data['UsablesBackpack']:
+            sheet.UsablesBackpack[item['usable']] = item['quantity']
+        
+        for item in data['PermanentsBackpack']:
+            sheet.PermanentsBackpack[item['permanent']] = item['quantity']
+
         return sheet
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    # getters and setters
+    def setName(self, name):
+        self.name = name
+
+    def getName(self):
+        return self.name
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     # getters and setters
     def AttB_setValue(self, AttB):
         self.B = AttB
+
 
     def AttB_getValue(self):
         return self.AttB
@@ -292,14 +304,14 @@ class Sheet_Template:
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
           
     def dance(self, target):
-        print(self.nome, "dançou com", target.nome)
+        print(self.name, "dançou com", target.name)
         if self.AttV_rollAtr(20, 50, 1):
             print("Dançou muito bem. Daaaaaale!")
         else:
             print("Dançou mal. Não foi poggers amigo")
 
     def punch(self, target, damage):
-        print(self.nome, "bateu em", target.nome)
+        print(self.name, "bateu em", target.name)
         if target is not None:
             if self.AttV_rollAtr(20, 50, 1):
                 print("Acertou em cheio!")
@@ -308,11 +320,11 @@ class Sheet_Template:
                 print("Bateu mal. Errou o alvo")
     
     def wink(self, target):
-        print(self.nome, "piscou para", target.nome)
+        print(self.name, "piscou para", target.name)
 
     def send(self, target, item, quantity):
-        print(self.nome, "entregou", item.getName(), "para", target.nome)
-        print(target.nome, "recebeu", item.getName())
+        print(self.name, "entregou", item.getName(), "para", target.name)
+        print(target.name, "recebeu", item.getName())
         if hasattr(item, 'range'):
             target.addWeapon(item, quantity)
             self.removeWeapon(item, quantity)
