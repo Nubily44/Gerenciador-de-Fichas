@@ -68,10 +68,10 @@ def receive_data(socket):
         try:
             data = socket.recv(1024) # <- recebe a mensagem
         except ConnectionResetError:
-            print(f"Erro ao conectar com o servidor: connection reset")
+            print("\nErro ao conectar com o servidor: connection reset")
             break
         except socket.error as e:
-            print(f"Erro ao conectar com o servidor. Erro: {e}")
+            print(f"\nErro ao conectar com o servidor. Erro: {e}")
             break
         if data:
             received_data = data.decode('utf-8')

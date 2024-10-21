@@ -1,5 +1,8 @@
 import random
 
+#classe de equipamento, que pode ser arma, item usável, item permanente ou buff permanente
+#as classes filhas são as que realmente são usadas na ficha de personagem
+
 class Equipment_Template:
     def __init__(self, name, type, rarity, state):
         self.name = name
@@ -7,7 +10,8 @@ class Equipment_Template:
         self.rarity = rarity
         self.state = state
 
-    # Dices
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
     
     def to_dict(self):
         return {
@@ -25,6 +29,9 @@ class Equipment_Template:
             rarity=data['rarity'],
             state=data['state']
         )
+    
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Dados de rolagem de dados
 
     def roll_Dice(self, x):
         return random.randint(1, x)
@@ -49,31 +56,22 @@ class Equipment_Template:
     def setName(self, name):
         self.name = name
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-    #Getters and setters
     def getType(self):
         return self.type
     def setType(self, type):
         self.type = type
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-    #Getters and setters
     def getRarity(self):
         return self.rarity
     def setRarity(self, rarity):
         self.rarity = rarity
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-    #Getters and setters
     def getState(self):
         return self.state
     def setState(self, state):
         self.state = state
-    
-#Weapon_Template class extends Equipment_Template
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     
 class Weapon_Template(Equipment_Template):
     def __init__(self, name, type, rarity, state, range):
@@ -81,6 +79,9 @@ class Weapon_Template(Equipment_Template):
         self.range = range
         print("Criou arma:", name, "\n tipo:", type, "\n raridade:", rarity, "\n estado:", state)
     
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
+
     def DisplayString(self):
         display_string = (
             f"Weapon: {self.name}\n"
@@ -108,12 +109,16 @@ class Weapon_Template(Equipment_Template):
             state=data['state'],
             range=data['range']
         )
-    
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
     def getRange(self):
         return self.range
     
     def setRange(self, range):
         self.range = range
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
             
     def roll_Damage_TwoDicesMod(self, n, x, m, y, modifier, target:None):
         temp = (n * self.roll_Dice(x) + m * self.roll_Dice(y) + modifier)
@@ -167,7 +172,10 @@ class Usable_Template(Equipment_Template):
         super().__init__(name, type, rarity, state)
         self.durability = durability
         print("Criou o equipamento:", self.name)
-    
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
+
     def DisplayString(self):
         display_string = (
             f"Usable: {self.name}\n"
@@ -195,6 +203,16 @@ class Usable_Template(Equipment_Template):
             state=data['state'],
             durability=data['durability']
         )
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    def getDurability(self):
+        return self.durability
+    
+    def setDurability(self, durability):
+        self.durability = durability
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     def rollUse(self, x, hit):
         temp = self.roll_Dice(x)
@@ -250,6 +268,9 @@ class Permanent_Template(Equipment_Template):
         super().__init__(name, type, rarity, state)
         print("Criou o equipamento:", self.name)
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
+
     def DisplayString(self):
         display_string = (
             f"Permanent: {self.name}\n"
@@ -272,12 +293,17 @@ class Permanent_Template(Equipment_Template):
             rarity=data['rarity'],
             state=data['state']
         )
+    
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 class Permanent_Buff_Template(Permanent_Template):
     def __init__(self, name, type, rarity, state, effect):
         super().__init__(name, type, rarity, state)
         self.effect = effect
     
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
+
     def DisplayString(self):
         display_string = (
             f"Permanent Buff: {self.name}\n"
@@ -306,20 +332,20 @@ class Permanent_Buff_Template(Permanent_Template):
             effect=data['effect']
         )
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    def getEffect(self):
+        return self.effect
+    
+    def setEffect(self, effect):
+        self.effect = effect
+    
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-    
+
     def applyInAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() + self.effect)
         print("Aplicou", self.effect, "em", target.name)
         
     def removeFromAttV(self, target):
         target.AttV_setValue(target.AttV_getValue() - self.effect)
-        print("Removeu", self.effect, "de", target.name)    
-    
-    def getEffect(self):
-        return self.effect
-    
-    
-
-    
-
-    
-    
+        print("Removeu", self.effect, "de", target.name)

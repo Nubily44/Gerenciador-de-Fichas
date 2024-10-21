@@ -10,7 +10,7 @@ import shutil
 import glob
 import time
 
-# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------0
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------0
 # se você vê o 0 no final dessa linha, o tamanho da letra está +- adequado para ler esse código
 
 
@@ -30,9 +30,9 @@ Send = 0 # 0 = Not sending, 1 = Sending
 Receive = 0 # 0 = Not receiving, 1 = Receiving
 Ready = 0 # 0 = Not ready, 1 = Ready
 
-tempMessage = []
-tempIp = []
-conn = None
+tempMessage = [] #Mensagem temporária que armazena a mensagem recebida
+tempIp = [] #Mensagem temporária que armazena o ip do cliente
+conn = None #Mensagem temporária que armazena o socket da conexão
 
 lock = threading.Lock()
 
@@ -53,24 +53,25 @@ class ClientHandler(threading.Thread):
         
         while True:
             try:
-                data = self.conn.recv(1024).decode('utf-8')
+                data = self.conn.recv(1024).decode('utf-8') # <- Recebe os dados enviados pelo cliente
                 received_data = data.split(',')
                 print(f"\nDados recebidos: \n{received_data}")
                 if received_data and len(received_data) == 10:
 
                     global tempMessage, tempIp, Receive, Send, conn
-                    with lock:
-                        Receive = 1
-                        tempMessage = received_data
-                        tempIp = self.client_Ip
-                        conn = self.conn
+                    if Receive == 0:
+                        with lock:
+                            Receive = 1
+                            tempMessage = received_data
+                            tempIp = self.client_Ip
+                            conn = self.conn
 
                 if len(received_data) == 2 and int(received_data[0].strip("[]")) == 1:
                     self.lastTime = time.time()
 
 
             except socket.timeout:
-                if time.time() - self.lastTime > 60:  
+                if time.time() - self.lastTime > 240:  
                     try:    
                         self.alive = 0
                         self.conn.close()
@@ -99,7 +100,7 @@ def receive_connection(port):
     while True:
         try:
             conn, addr = connection_socket.accept()
-            client_handler = ClientHandler(conn, addr, 60)
+            client_handler = ClientHandler(conn, addr, 240)
             client_handler.start()
 
         except:
@@ -120,7 +121,7 @@ def send_data(conn, arr):
                 if len(arr) == 10:
                     arr = arr.split(',')
             
-                conn.send(arr.encode('utf-8'))
+                conn.send(arr.encode('utf-8')) # <- Envia os dados para o cliente
                 print(f"\nDados Enviados: \n{arr}")
                 Send = 0
     except(ConnectionResetError, BrokenPipeError):
@@ -207,26 +208,20 @@ def searchSheet(x, table):
         
 def checkExistingSheets(i):
     max_sheet = 0
-    # Loop over tables, using 'x' to represent each table
     for x in range(i+1):
-        # Construct folder name for the table
         if x < 10:
             folder_name = f"table0{x}"
         else:
             folder_name = f"table{x}"
         
-        # Construct full path for the folder
+
         full_path = os.path.join("serverside", "tables", folder_name)
-        #print("Antes de dar merda: ", searchTable(x))
-        #print("Full path: ", full_path)
-        # Check if the folder exists before searching sheets
         if os.path.exists(full_path) and os.path.isdir(full_path):
-            #print("Achou mesa: ", x)
-            # Check for sheet files in this table folder
+
             for y in range(100):
                 if searchSheet(y, x):
-                    #print("Existe ficha: ", y)  # Search in table `x`
-                    max_sheet = y  # Update max sheet if found
+                    max_sheet = y  
+
     return max_sheet
 
 def checkSheet(i, table):
@@ -266,6 +261,9 @@ def checkEquipment(table):
         else:
             equipment_path = os.path.join("serverside","tables",f"table{str(table)}", "equipment")
         os.mkdir(equipment_path)
+
+
+# IMPORTANTE: os comentários abaixo são ANOTAÇÕES temporárias, e podem não ter informações corretas ou atualizadas. Não confie neles.
 
 
 { #Comentários
@@ -341,29 +339,26 @@ def checkEquipment(table):
 }
 
 if __name__ == "__main__":
-    PORT = 5000  # You can adjust this port # Our IP address
+    PORT = 5000 # porta do servidor
 
-    # Start the receiver thread
-    receive_thread = threading.Thread(target=receive_connection, args=(PORT,))
-    receive_thread.daemon = True  # This allows the thread to exit when the main program exits
+    receive_thread = threading.Thread(target=receive_connection, args=(PORT,)) # Cria uma thread para o socket de bem vindo
+    receive_thread.daemon = True
     receive_thread.start()
 
     print("Server started. Listening for incoming connections...")
 
-    # Main traffic light loop
-    timeinicial = time.time()
     while True:
         with lock:
-            if Receive == 1 and Ready == 0:
-                # Process the received message
+            if Receive == 1 and Ready == 0: # Se recebeu uma mensagem e não está processando
                 print("Processing the message...")
 
-                message = tempMessage
-                tempMessage = []
+                message = tempMessage  
                 ip = tempIp
-                print("ip da mensagem", ip)
+                print("ip da mensagem: ", ip)
 
+                tempMessage = []
                 tempIp = []
+                #Mensagens temporárias que comunicam do socket para a main são limpas
 
                 sender = int(message[0])
                 idn = int(message[1])
@@ -374,7 +369,7 @@ if __name__ == "__main__":
                 for i in range(5):
                     values[i] = message[5+i]
 
-
+                #Caminhos para as funções. table_path é a mesa, txt_path é o arquivo de texto da ficha, json_path é o arquivo json da ficha, equipment_path é o arquivo json do equipamento
 
                 if table_id<10:
 
@@ -394,12 +389,10 @@ if __name__ == "__main__":
                     json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
                     equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
                     table_path = (os.path.join("serverside","tables",f"table{str(table_id)}"))
-                
-
-                    
+            
 
                 match message_type:
-                    case -1:
+                    case -1: #Sair
                         if sender == 0:
                             conn.close()
 
@@ -410,9 +403,7 @@ if __name__ == "__main__":
                             send_thread = threading.Thread(target=send_data, args=(conn, "Mesa criada com sucesso"))
                             send_thread.daemon = True
                             send_thread.start()
-                        else:
-                            pass
-                    
+
                     case 1: # Criar Ficha
                         if sender == 0:
                             checkTable(table_id)
@@ -481,6 +472,8 @@ if __name__ == "__main__":
                         if sender == 0:
                             print("Identificação")
                             mesa_max = checkExistingTables()
+
+                            #função que identifica o usuário
                             idn = identify(ip)
 
 
@@ -505,6 +498,7 @@ if __name__ == "__main__":
                                 sheet_object = Sheet_Template.from_dict(data)
 
 
+                                #qual atributo
                                 if values[0] == 1:
                                     if values[1] == 0:
                                         phrase = sheet_object.getAttB()
@@ -621,6 +615,15 @@ if __name__ == "__main__":
                                         send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.getName()))
                                         send_thread.daemon = True
                                         send_thread.start() 
+                    
+                    case 10: #Usar Equipamento
+                        pass
+
+                    case 11: #Deletar Equipamento
+                        pass
+                    
+                    case 12: #Modificar Equipamento
+                        pass
 
                     case 13: # Display Ficha
                         print("Existencia da mesa")

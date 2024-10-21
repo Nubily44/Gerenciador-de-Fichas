@@ -11,13 +11,9 @@ class Sheet_Template:
         self.UsablesBackpack = []
         self.PermanentsBackpack = []
 
-    def getHash(self):
-        return self.hash
-    
-    def setHash(self, hash):
-        self.hash = hash
-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Dices
+
     def roll_Dice(self, x):
         return random.randint(1, x)
     
@@ -31,6 +27,8 @@ class Sheet_Template:
             return max(rolls)
         else:
             return min(rolls)
+        
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     def Display(self):
         print("Nome: ", self.name)
@@ -53,6 +51,9 @@ class Sheet_Template:
 
         print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
     
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Funções para retornar informações ao cliente e criar os json files
+
     def DisplayString(self):
         display_string = (
             f"Nome: {self.name}\n"
@@ -237,6 +238,7 @@ class Sheet_Template:
         return self.WeaponsBackpack
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    #Funções para lidar com mochilas e itens
     
     def addUsable(self, usable, quantity):
         if quantity > 0:
@@ -301,9 +303,10 @@ class Sheet_Template:
     def getPermanentsBackpack(self):
         return self.PermanentsBackpack
              
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-          
-    def dance(self, target):
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    #Ações de Personagem 
+
+    def dance(self, target): #(também conhecida como "dançar pros cria")
         print(self.name, "dançou com", target.name)
         if self.AttV_rollAtr(20, 50, 1):
             print("Dançou muito bem. Daaaaaale!")
