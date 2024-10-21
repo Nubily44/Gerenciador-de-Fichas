@@ -434,7 +434,7 @@ if __name__ == "__main__":
                             if searchTable(table_id):
                                 shutil.rmtree(table_path)
 
-                                send_thread = threading.Thread(target=send_data, args=(conn, "Mesa deletada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, f"Mesa {table_id} deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
                     
@@ -444,7 +444,7 @@ if __name__ == "__main__":
                                 os.remove(txt_path)
                                 os.remove(json_path)
 
-                                send_thread = threading.Thread(target=send_data, args=(conn, "Ficha deletada com sucesso"))
+                                send_thread = threading.Thread(target=send_data, args=(conn, f"Ficha {sheet_id} deletada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
 
@@ -464,7 +464,7 @@ if __name__ == "__main__":
                                 for file in files:
                                     shutil.move(file, table_path_sent_to)
 
-                            send_thread = threading.Thread(target=send_data, args=(conn, "Ficha movida com sucesso"))
+                            send_thread = threading.Thread(target=send_data, args=(conn, f"Ficha {sheet_id} movida com sucesso para a mesa {values[0]}"))
                             send_thread.daemon = True
                             send_thread.start()
 
@@ -490,33 +490,42 @@ if __name__ == "__main__":
                         if sender == 0:
                             if searchSheet(sheet_id, table_id):
                                 
-                                for(i) in range(3):
-                                    values[i] = int(values[i])
+                                values[0] = int(values[0])
+                                values[1] = int(values[1])
 
                                 with open(json_path, "r") as json_file:
                                     data = json.load(json_file)
-                                sheet_object = Sheet_Template.from_dict(data)
+                                character_sheet_instance = Sheet_Template.from_dict(data)
 
 
                                 #qual atributo
                                 if values[0] == 1:
                                     if values[1] == 0:
-                                        phrase = sheet_object.getAttB()
+                                        phrase = character_sheet_instance.getAttB()
                                     elif values[1] == 1:
-                                        sheet_object.setAttB(values[2])
+                                        values[2] = int(values[2])
+                                        character_sheet_instance.setAttB(values[2])
                                 if values[0] == 2:
                                     if values[1] == 0:
-                                        phrase = sheet_object.getAttC()
+                                        phrase = character_sheet_instance.getAttC()
                                     elif values[1] == 1:
-                                        sheet_object.setAttC(values[2])
+                                        values[2] = int(values[2])
+                                        character_sheet_instance.setAttC(values[2])
                                 if values[0] == 3:
                                     if values[1] == 0:
-                                        phrase = sheet_object.getAttV()
+                                        phrase = character_sheet_instance.getAttV()
                                     elif values[1] == 1:
-                                        sheet_object.setAttV(values[2])
+                                        values[2] = int(values[2])
+                                        character_sheet_instance.setAttV(values[2])
+                                if values[0] == 4:
+                                    if values[1] == 0:
+                                        phrase = character_sheet_instance.getName()
+                                    elif values[1] == 1:
+                                        values[2] = str(values[2])
+                                        character_sheet_instance.setName(values[2])
 
 
-                                json_str = sheet_object.to_dict()
+                                json_str = character_sheet_instance.to_dict()
                                 with open(json_path, "w") as json_file:
                                     json.dump(json_str, json_file, indent=4)
                                 character_sheet_instance.logging(txt_path)
@@ -524,7 +533,6 @@ if __name__ == "__main__":
                                 send_thread = threading.Thread(target=send_data, args=(conn, "Ficha atualizada com sucesso"))
                                 send_thread.daemon = True
                                 send_thread.start()
-                                print(character_sheet_instance.DisplayString())
                                 send_thread2 = threading.Thread(target=send_data, args=(conn, character_sheet_instance.DisplayString()))
                                 send_thread2.daemon = True
                                 send_thread2.start()
@@ -567,9 +575,16 @@ if __name__ == "__main__":
                         
                     case 9: #Acões
                         if sender == 0:
-                            for i in range(3):
-                                values[i] = int(values[i])
-                                
+
+                            if int(values[0]) == 3:
+                                values[0] = int(values[0])
+                                values[1] = int(values[1])
+                                values[2] = str(values[2])
+                                values[3] = int(values[3])
+                            else:
+                                for i in range(3):
+                                    values[i] = int(values[i])
+                                    
                             if searchSheet(sheet_id, table_id):
                                     other_id = values[1]
                             with open(json_path, "r") as json_file:
@@ -611,7 +626,8 @@ if __name__ == "__main__":
                                             json.dump(data, json_file, indent=4)
                                         character_sheet_instance2.logging(txt_path2)
                                         
-                                        
+                                        values[2] = str(values[2])
+                                        values[3] = str(values[3])
                                         send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.getName()))
                                         send_thread.daemon = True
                                         send_thread.start() 

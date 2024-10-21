@@ -95,7 +95,7 @@ class Sheet_Template:
 
     def to_dict(self):
         return {
-            "nome": self.name,
+            "name": self.name,
             "AttB": self.AttB,
             "AttC": self.AttC,
             "AttV": self.AttV,
