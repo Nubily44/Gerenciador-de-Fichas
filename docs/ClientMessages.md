@@ -1,6 +1,7 @@
 
 Menu de funções
 
+#
 Mensagens: DM
     - iniciar mesa
         identifica o ip do dm -> id 1
@@ -11,6 +12,7 @@ Mensagens: DM
     - modificar ficha de outra pessoa 
 
     - fechar mesa
+#
 
 Mensagens gerais:
     - conectar à mesa como player (insere código da mesa) (manda numero de id)
@@ -34,14 +36,5 @@ Mensagens gerais:
     - rolagem de dado simples
 
     - Status online e dead man switch 
-
-#
-    
-nome = input("Qual seria o nome do seu personagem?")
-classe = input("Qual seria a classe do seu personagem?")
-vida = input("Qual seria a quantidade de vida do seu personagem?")
-mana = input("Qual seria a quantidade de mana do seu personagem?")
-hab1 = input("Qual seria sua primeira habilidade?")
-hab2 = input("Qual seria sua segunda habilidade?")    
 
 #
