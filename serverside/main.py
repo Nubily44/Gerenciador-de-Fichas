@@ -500,22 +500,22 @@ if __name__ == "__main__":
                                 #qual atributo
                                 if values[0] == 1:
                                     if values[1] == 0:
-                                        phrase = character_sheet_instance.getAttB()
+                                        phrase = character_sheet_instance.AttB_getValue()
                                     elif values[1] == 1:
                                         values[2] = int(values[2])
-                                        character_sheet_instance.setAttB(values[2])
+                                        character_sheet_instance.AttB_setValue(values[2])
                                 if values[0] == 2:
                                     if values[1] == 0:
-                                        phrase = character_sheet_instance.getAttC()
+                                        phrase = character_sheet_instance.AttC_getValue()
                                     elif values[1] == 1:
                                         values[2] = int(values[2])
-                                        character_sheet_instance.setAttC(values[2])
+                                        character_sheet_instance.AttC_setValue(values[2])
                                 if values[0] == 3:
                                     if values[1] == 0:
-                                        phrase = character_sheet_instance.getAttV()
+                                        phrase = character_sheet_instance.AttV_getValue()
                                     elif values[1] == 1:
                                         values[2] = int(values[2])
-                                        character_sheet_instance.setAttV(values[2])
+                                        character_sheet_instance.AttV_setValue(values[2])
                                 if values[0] == 4:
                                     if values[1] == 0:
                                         phrase = character_sheet_instance.getName()

@@ -142,7 +142,7 @@ class Sheet_Template:
 
     # getters and setters
     def AttB_setValue(self, AttB):
-        self.B = AttB
+        self.AttB = AttB
 
 
     def AttB_getValue(self):
