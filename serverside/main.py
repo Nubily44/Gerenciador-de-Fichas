@@ -593,10 +593,10 @@ if __name__ == "__main__":
                             if searchSheet(other_id, table_id):
                                 if other_id <10:
                                     json_path2  = os.path.join(table_path, f"sheet0{str(other_id)}.json")
-                                    text_path2  = os.path.join(table_path, f"sheet0{str(other_id)}.txt")
+                                    txt_path2  = os.path.join(table_path, f"sheet0{str(other_id)}.txt")
                                 else:
                                     json_path2  = os.path.join(table_path, f"sheet{str(other_id)}.json")
-                                    text_path2  = os.path.join(table_path, f"sheet{str(other_id)}.txt")
+                                    txt_path2  = os.path.join(table_path, f"sheet{str(other_id)}.txt")
                                 with open(json_path2, "r") as json_file:
                                     sheet_data = json.load(json_file)
                                 character_sheet_instance2 = Sheet_Template.from_dict(sheet_data)
@@ -614,7 +614,9 @@ if __name__ == "__main__":
                                         send_thread.daemon = True
                                         send_thread.start()      
                                     case 3: #Manda item pros cria   
-                                        character_sheet_instance.send(character_sheet_instance2, values[2], values[3])
+
+                                        # Comentado pois precisa da implementação das mochilas e dos equipamentos específicos
+                                        #character_sheet_instance.send(character_sheet_instance2, values[2], values[3])
 
                                         data = character_sheet_instance.to_dict()
                                         with open(json_path, "w") as json_file:
@@ -628,7 +630,7 @@ if __name__ == "__main__":
                                         
                                         values[2] = str(values[2])
                                         values[3] = str(values[3])
-                                        send_thread = threading.Thread(target=send_data, args=(conn, "Você deu ", values[3] , values[2], "para ", character_sheet_instance2.getName()))
+                                        send_thread = threading.Thread(target=send_data, args=(conn, f"Você deu  {values[3]}  {values[2]} para  {character_sheet_instance2.getName()}"))
                                         send_thread.daemon = True
                                         send_thread.start() 
                     

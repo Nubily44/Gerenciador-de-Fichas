@@ -70,7 +70,7 @@ def receive_data(socket):
             print("\nErro ao conectar com o servidor: connection reset")
             break
         except socket.error as e:
-            print(f"\nErro ao conectar com o servidor. Erro: {e}")
+            print(f"Erro ao conectar com o servidor. Erro: {e}")
             break
         if data:
             received_data = data.decode('utf-8')
@@ -95,9 +95,9 @@ def send_numbers(client_socket, numbers):
             print("enviado: ", message_to_send)
 
         except (ConnectionResetError, BrokenPipeError):
-            print("Desconectou do servidor, verifique o status do servidor")
+            print("\nDesconectou do servidor, verifique o status do servidor")
         except socket.error as e:
-            print(f"Não foi possível conectar com o servidor. Erro: {e}")
+            print(f"\nNão foi possível conectar com o servidor. Erro: {e}")
         
 
 
@@ -143,6 +143,7 @@ def run_client(server_ip, server_port):
     mesa = int(mesa)
     if mesa == -1:
         send_numbers(socket, [0, str(Id), (mesas+1), -1, 0, -1, -1, -1, -1, -1]) # <- mesaS, não mesa (é pra criar uma mesa nova)
+        mesa = mesas+1
         time.sleep(1)
         print(f"Entrando na mesa {mesas+1}...")
         print(f"Na mesa {mesas+1}, qual ficha você deseja acessar?")
@@ -213,9 +214,11 @@ def interface(mesa, ficha, socket):
             atributo = input("Insira o atributo que deseja modificar:\n1 - AttB\n2 - AttC\n3 - AttV\n4 - nome\nInput: ")
             type = input("Insira:\n0 - visualizar\n1 - modificar\nInput: ")
             valor = ""
-            if type == 1:
+            if int(type) == 1:
                 valor = input("Insira o novo valor: ")
-            send_numbers(socket, [0, str(Id), mesa, ficha, 6, atributo, type, valor, -1, -1])
+                send_numbers(socket, [0, str(Id), mesa, ficha, 6, atributo, type, valor, -1, -1])
+            else:
+                send_numbers(socket, [0, str(Id), mesa, ficha, 6, atributo, type, -1, -1, -1])
 
         elif escolha1 == 5: #adicionar um equipamento a mochila
             print("Essa feature ainda não foi implementada :(") 
@@ -232,6 +235,7 @@ def interface(mesa, ficha, socket):
         elif escolha1 == 6: #fazer uma ação
             acao = input("Insira a ação que deseja fazer:\n0 - dançar\n1 - punch\n2 - piscar\n3 - dar um item\nInput: ")
             dest = input("Insira o destino da ação: ")
+            acao = int(acao)
             if acao == 3:
                 item = input("Insira o nome do item: ")
                 quantidade = input("Insira a quantidade de itens: ")
