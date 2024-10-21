@@ -29,7 +29,7 @@ def keepAlive(conn):
 #Função para pegar o id do cliente
 def getId():
     global Id
-    file_path = os.path.join("clientside", "src", "client_id.txt")
+    file_path = os.path.join("client_id.txt") # <- Editar caminho caso no VSCode
 
     if not os.path.exists(file_path):
         with open(file_path, "w") as f:
@@ -130,7 +130,7 @@ def run_client(server_ip, server_port):
     print("Agora você está conectado ao servidor!")
     sep()
     
-    path = os.path.join("clientside", "src", "client_id.txt")
+    path = os.path.join("client_id.txt") # <- Editar caminho caso no VSCode
     with open(path, "w") as f:
         tempId = tempMessage[1]
         f.write(tempId)

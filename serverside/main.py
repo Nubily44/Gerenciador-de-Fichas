@@ -12,7 +12,7 @@ import time
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------0
 # se você vê o 0 no final dessa linha, o tamanho da letra está +- adequado para ler esse código
-
+# ATENÇÃO, se o código abaixo for rodado no VSCode, TODOS OS PATHS PRECISAM INCLUIR O A PASTA "serverside" NO COMEÇO
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -34,8 +34,7 @@ tempMessage = [] #Mensagem temporária que armazena a mensagem recebida
 tempIp = [] #Mensagem temporária que armazena o ip do cliente
 conn = None #Mensagem temporária que armazena o socket da conexão
 
-lock = threading.Lock()
-
+lock = threading.Lock() # Lock para garantir que apenas uma thread execute por vez
 
 # Client Handler: objeto que armazena o socket da conexão e o endereço do cliente, e recebe os dados enviados pelo cliente
 class ClientHandler(threading.Thread):
@@ -132,7 +131,7 @@ def send_data(conn, arr):
 #Caro professor, perdemos 5 horas da nossa vida tentando fazer essa função do código funcionar (identify), conseguimos. Espero q essa função queime no inferno. Adiquirimos ódio pelo pandas e por ela
 
 def identify(ip):
-    path = os.path.join("serverside", "idns.csv")
+    path = os.path.join("idns.csv")
     
     if os.path.exists(path):
         try:
@@ -168,7 +167,7 @@ def searchTable(i):
         folder_name = f"table0{i}"
     else:
         folder_name = f"table{i}"
-    full_path = os.path.join("serverside", "tables", folder_name)
+    full_path = os.path.join("tables", folder_name)
     if os.path.exists(full_path) and os.path.isdir(full_path):
         return True
     return False
@@ -183,7 +182,7 @@ def checkTable(i):
             folder_name = f"table0{i}"
         else:
             folder_name = f"table{i}"
-        full_path = os.path.join("serverside", "tables", folder_name)
+        full_path = os.path.join("tables", folder_name)
         os.mkdir(full_path)
 
 def checkExistingTables():
@@ -199,7 +198,7 @@ def searchSheet(x, table):
     else:
         file_name = f"sheet{x}.txt"
     
-    full_path = os.path.join("serverside", "tables", f"table0{str(table)}", file_name)
+    full_path = os.path.join("tables", f"table0{str(table)}", file_name)
     
 
     if os.path.exists(full_path) and os.path.isfile(full_path):
@@ -215,7 +214,7 @@ def checkExistingSheets(i):
             folder_name = f"table{x}"
         
 
-        full_path = os.path.join("serverside", "tables", folder_name)
+        full_path = os.path.join("tables", folder_name)
         if os.path.exists(full_path) and os.path.isdir(full_path):
 
             for y in range(100):
@@ -235,17 +234,17 @@ def checkSheet(i, table):
         else:
             file_name = f"sheet{i}.txt"
         if table<10:
-            full_path = os.path.join("serverside","tables",f"table0{str(table)}", file_name)
+            full_path = os.path.join("tables",f"table0{str(table)}", file_name)
         else:
-            full_path = os.path.join("serverside","tables",f"table{str(table)}", file_name)
+            full_path = os.path.join("tables",f"table{str(table)}", file_name)
         with open(full_path, "w"):
             pass
 
 def searchEquipment(table):
     if table<10:
-        equipment_path = os.path.join("serverside","tables",f"table0{str(table)}", "equipment")
+        equipment_path = os.path.join("tables",f"table0{str(table)}", "equipment")
     else:
-        equipment_path = os.path.join("serverside","tables",f"table{str(table)}", "equipment")
+        equipment_path = os.path.join("tables",f"table{str(table)}", "equipment")
     if os.path.exists(equipment_path) and os.path.isdir(equipment_path):
         return True
     return False
@@ -257,9 +256,9 @@ def checkEquipment(table):
     else:
         print("Criando Pasta")
         if table<10:
-            equipment_path = os.path.join("serverside","tables",f"table0{str(table)}", "equipment")
+            equipment_path = os.path.join("tables",f"table0{str(table)}", "equipment")
         else:
-            equipment_path = os.path.join("serverside","tables",f"table{str(table)}", "equipment")
+            equipment_path = os.path.join("tables",f"table{str(table)}", "equipment")
         os.mkdir(equipment_path)
 
 
@@ -373,22 +372,22 @@ if __name__ == "__main__":
 
                 if table_id<10:
 
-                    table_path = os.path.join("serverside","tables",f"table0{str(table_id)}")
-                    txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
-                    json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.json")
-                    equipment_path = os.path.join("serverside","tables",f"table0{str(table_id)}", "equipment", f"{values[0]}.json")
+                    table_path = os.path.join("tables",f"table0{str(table_id)}")
+                    txt_path  = os.path.join("tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    json_path  = os.path.join("tables",f"table0{str(table_id)}", f"sheet{str(sheet_id)}.json")
+                    equipment_path = os.path.join("tables",f"table0{str(table_id)}", "equipment", f"{values[0]}.json")
 
                     if sheet_id<10:
 
-                        txt_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
-                        json_path  = os.path.join("serverside","tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.json")
+                        txt_path  = os.path.join("tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.txt")
+                        json_path  = os.path.join("tables",f"table0{str(table_id)}", f"sheet0{str(sheet_id)}.json")
 
                 else:
 
-                    txt_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
-                    json_path  = os.path.join("serverside","tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
-                    equipment_path = os.path.join("serverside","tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
-                    table_path = (os.path.join("serverside","tables",f"table{str(table_id)}"))
+                    txt_path  = os.path.join("tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.txt")
+                    json_path  = os.path.join("tables",f"table{str(table_id)}", f"sheet{str(sheet_id)}.json")
+                    equipment_path = os.path.join("tables",f"table{str(table_id)}", "equipment", f"{values[0]}.json")
+                    table_path = (os.path.join("tables",f"table{str(table_id)}"))
             
 
                 match message_type:
@@ -452,9 +451,9 @@ if __name__ == "__main__":
                         if sender == 0:
                             values[0] = int (values[0])
                             if values[0]<10:
-                                table_path_sent_to = os.path.join("serverside","tables",f"table0{str(values[0])}")
+                                table_path_sent_to = os.path.join("tables",f"table0{str(values[0])}")
                             else:
-                                table_path_sent_to = os.path.join("serverside","tables",f"table{str(values[0])}")
+                                table_path_sent_to = os.path.join("tables",f"table{str(values[0])}")
 
                             if not os.path.exists(table_path_sent_to):
                                 checkTable(values[0])
@@ -630,7 +629,7 @@ if __name__ == "__main__":
                                         
                                         values[2] = str(values[2])
                                         values[3] = str(values[3])
-                                        send_thread = threading.Thread(target=send_data, args=(conn, f"Você deu  {values[3]}  {values[2]} para  {character_sheet_instance2.getName()}"))
+                                        send_thread = threading.Thread(target=send_data, args=(conn, f"Você deu {values[3]}  {values[2]} para  {character_sheet_instance2.getName()}"))
                                         send_thread.daemon = True
                                         send_thread.start() 
                     
